@@ -492,6 +492,7 @@ def execute_arpscan (pRetries):
 def copy_pihole_network ():
     # check if Pi-hole is active
     if not PIHOLE_ACTIVE :
+        sql.execute ("DELETE FROM PiHole_Network")
         return    
 
     # Open Pi-hole DB
@@ -521,6 +522,7 @@ def copy_pihole_network ():
 def read_DHCP_leases ():
     # check DHCP Leases is active
     if not DHCP_ACTIVE :
+        sql.execute ("DELETE FROM DHCP_Leases")
         return    
             
     # Read DHCP Leases
