@@ -524,7 +524,10 @@ def read_DHCP_leases ():
     if not DHCP_ACTIVE :
         sql.execute ("DELETE FROM DHCP_Leases")
         return    
-            
+
+    scp_args = ['scp', DHCP_LEASES_SRC, DHCP_LEASES]
+    cmd_output = subprocess.check_output (scp_args, universal_newlines=True)
+
     # Read DHCP Leases
     # Bugfix #1 - dhcp.leases: lines with different number of columns (5 col)
     data = []
