@@ -16,6 +16,8 @@
 from __future__ import print_function
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from unificontrol               import UnifiClient
+from unificontrol.constants     import UnifiServerType
 
 import sys
 import subprocess
@@ -27,6 +29,7 @@ import socket
 import io
 import smtplib
 import csv
+import json
 
 
 #===============================================================================
@@ -208,7 +211,55 @@ def set_dynamic_DNS_IP ():
 def get_previous_internet_IP ():
     # get previos internet IP stored in DB
     sql.execute ("SELECT dev_LastIP FROM Devices WHERE dev_MAC = 'Internet' ")
-    previous_IP = sql.fetchone()[0]
+    sqlRow = sql.fetchone()
+    if (sqlRow is None):
+        sql.execute ("""INSERT INTO Devices  
+                        VALUES ('Internet', 
+                        'Internet', 
+                        'House', 
+                        'Router', 
+                        'ISP', 
+                        0, 
+                        'Always on', 
+                        '', 
+                        '2021-01-01 00:00:00',
+                        '2021-01-01 00:00:00',
+                        '0.0.0.0', 
+                        0, 
+                        0, 
+                        1, 
+                        0, 
+                        0, 
+                        0, 
+                        '2021-01-01 00:00:00.000000',
+                        1,
+                        0,
+                        '')""" )
+        previous_IP = '0.0.0.0'
+    else:
+        previous_IP = sqlRow[0]
+
+    #Internet|
+    #Internet|
+    #House|
+    #Router|
+    #Orange / Vodafone / Movistar ....|
+    #0|
+    #Always on|
+    #|
+    #2021-01-01 00:00:00|
+    #2021-01-01 00:00:00|
+    #0.0.0.0|
+    #0|
+    #0|
+    #1|
+    #0|
+    #0|
+    #0|
+    #2021-01-01 00:00:00.000000|
+    #1|
+    #0|
+    #
 
     # return previous IP
     return previous_IP
@@ -341,41 +392,51 @@ def scan_network ():
     print_log ('Query ScanCycle confinguration...')
     scanCycle_data = query_ScanCycle_Data (True)
     if scanCycle_data is None:
-        print ('\n*************** ERROR ***************')
-        print ('ScanCycle %s not found' % cycle )
-        print ('    Exiting...\n')
+        print ('ERROR: ScanCycle %s not found' % cycle )
         return 1
 
-    # ScanCycle data        
+    # ScanCycle data
     cycle_interval  = scanCycle_data['cic_EveryXmin']
-    arpscan_retries = scanCycle_data['cic_arpscanCycles']
-    # TESTING - Fast scan
-        # arpscan_retries = 1
-    
-    # arp-scan command
+    scan_devices = []
+
     print ('\nScanning...')
-    print ('    arp-scan Method...')
-    print_log ('arp-scan starts...')
-    arpscan_devices = execute_arpscan (arpscan_retries)
-    print_log ('arp-scan ends')
-    # DEBUG - print number of rows updated
+
+    if ARPSCAN_ACTIVE:
+        # arp-scan command
+        print ('    arp-scan Method...')
+        print_log ('arp-scan starts...')
+        arpscan_retries = scanCycle_data['cic_arpscanCycles']
+        # TESTING - Fast scan
+        # arpscan_retries = 1
+        scan_devices = execute_arpscan (arpscan_retries)
+        print_log ('arp-scan ends')
+        # DEBUG - print number of rows updated
         # print (arpscan_devices)
+    elif UNIFI_ACTIVE:
+        # UniFi method
+        print ('    UniFi Method...')
+        scan_devices = query_unifi_api()
+    else:
+        print ('    ERROR: No primary scan method specified!')
+        return 1
 
-    # Pi-hole method
-    print ('    Pi-hole Method...')
     openDB()
-    print_log ('Pi-hole copy starts...')
-    copy_pihole_network()
 
-    # DHCP Leases method
-    print ('    DHCP Leases Method...')
-    read_DHCP_leases ()
+    if PIHOLE_ACTIVE:
+        # Pi-hole method
+        print ('    Pi-hole Method...')
+        copy_pihole_network()
+
+    if DHCP_ACTIVE:
+        # DHCP Leases method
+	    print ('    DHCP Leases Method...')
+	    read_DHCP_leases ()
 
     # Load current scan data
-    print ('\nProcesising scan results...')
+    print ('\nProcessing scan results...')
     print_log ('Save scanned devices')
-    save_scanned_devices (arpscan_devices, cycle_interval)
-    
+    save_scanned_devices (scan_devices, cycle_interval)
+
     # Print stats
     print_log ('Print Stats')
     print_scan_stats()
@@ -402,19 +463,19 @@ def scan_network ():
     # Void false connection - disconnections
     print ('    Voiding false (ghost) disconnections...')
     void_ghost_disconnections ()
-  
+
     # Pair session events (Connection / Disconnection)
     print ('    Pairing session events (connection / disconnection) ...')
-    pair_sessions_events()  
-  
+    pair_sessions_events()
+
     # Sessions snapshot
     print ('    Creating sessions snapshot...')
     create_sessions_snapshot ()
-  
+
     # Skip repeated notifications
     print ('    Skipping repeated notifications...')
     skip_repeated_notifications ()
-  
+
     # Commit changes
     sql_connection.commit()
     closeDB()
@@ -478,15 +539,62 @@ def execute_arpscan (pRetries):
             unique_devices.append(device)
 
     # DEBUG
-        # print (devices_list)
-        # print (unique_mac)
-        # print (unique_devices)
-        # print (len(devices_list))
-        # print (len(unique_mac))
-        # print (len(unique_devices))
+    #print (devices_list)
+    # print (unique_mac)
+    # print (unique_devices)
+    # print (len(devices_list))
+    # print (len(unique_mac))
+    # print (len(unique_devices))
 
     # return list
+    #print (unique_devices)
     return unique_devices
+
+
+#-------------------------------------------------------------------------------
+def query_unifi_api ():
+    unifi = UnifiClient(host=UNIFI_HOST, port=UNIFI_PORT, username=UNIFI_USERNAME, password=UNIFI_PASSWORD, server_type=UNIFI_SERVER_TYPE)
+    unifi.login()
+
+    clients = unifi.list_clients()
+    devices = unifi.list_devices()
+
+    #unifi.logout()
+
+    clients_json_str = json.dumps(clients)
+    clients_json = json.loads(clients_json_str)
+    clients_json_formatted_str = json.dumps(clients_json, indent=2)
+    #print(clients_json_formatted_str)
+
+    # Create Userdict of devices
+    scan_list = []
+    for client in clients_json:
+        if 'ip' in client:
+            scan = dict([
+                ('ip', client['ip']),
+                ('mac', client['mac']),
+                ('hw', client['oui'])
+            ])
+            scan_list.append(scan)
+
+    devices_json_str = json.dumps(devices)
+    devices_json = json.loads(devices_json_str)
+    devices_json_formatted_str = json.dumps(devices_json, indent=2)
+    #print(devices_json_formatted_str)
+
+    for device in devices_json:
+        if device['state'] == 1:
+            scan = dict([
+                ('ip', device['ip']),
+                ('mac', device['mac']),
+                ('hw', 'Ubiquiti Networks Inc.')
+            ])
+            scan_list.append(scan)
+
+    # return list
+    #print(scan_list)
+    return scan_list
+
 
 #-------------------------------------------------------------------------------
 def copy_pihole_network ():
@@ -587,7 +695,10 @@ def print_scan_stats ():
     sql.execute ("""SELECT COUNT(*) FROM CurrentScan
                     WHERE cur_ScanMethod='arp-scan' AND cur_ScanCycle = ? """,
                     (cycle,))
-    print ('        arp-scan Method....:', str (sql.fetchone()[0]) )
+    if ARPSCAN_ACTIVE:
+        print ('        arp-scan Method....:', str (sql.fetchone()[0]) )
+    elif UNIFI_ACTIVE:
+        print ('        UniFi Method.......:', str (sql.fetchone()[0]) )
 
     # Devices Pi-hole
     sql.execute ("""SELECT COUNT(*) FROM CurrentScan
