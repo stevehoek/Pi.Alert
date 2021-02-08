@@ -209,7 +209,7 @@ def set_dynamic_DNS_IP ():
     
 #-------------------------------------------------------------------------------
 def get_previous_internet_IP ():
-    # get previos internet IP stored in DB
+    # get previous internet IP stored in DB
     sql.execute ("SELECT dev_LastIP FROM Devices WHERE dev_MAC = 'Internet' ")
     sqlRow = sql.fetchone()
     if (sqlRow is None):
@@ -238,28 +238,6 @@ def get_previous_internet_IP ():
         previous_IP = '0.0.0.0'
     else:
         previous_IP = sqlRow[0]
-
-    #Internet|
-    #Internet|
-    #House|
-    #Router|
-    #Orange / Vodafone / Movistar ....|
-    #0|
-    #Always on|
-    #|
-    #2021-01-01 00:00:00|
-    #2021-01-01 00:00:00|
-    #0.0.0.0|
-    #0|
-    #0|
-    #1|
-    #0|
-    #0|
-    #0|
-    #2021-01-01 00:00:00.000000|
-    #1|
-    #0|
-    #
 
     # return previous IP
     return previous_IP
@@ -417,7 +395,7 @@ def scan_network ():
         print ('    UniFi Method...')
         scan_devices = query_unifi_api()
     else:
-        print ('    ERROR: No primary scan method specified!')
+        print ('    ERROR: No primary scan method specified in the config!')
         return 1
 
     openDB()
@@ -563,26 +541,32 @@ def query_unifi_api ():
 
     clients_json_str = json.dumps(clients)
     clients_json = json.loads(clients_json_str)
-    clients_json_formatted_str = json.dumps(clients_json, indent=2)
+    #clients_json_formatted_str = json.dumps(clients_json, indent=2)
     #print(clients_json_formatted_str)
 
     # Create Userdict of devices
     scan_list = []
     for client in clients_json:
         if 'ip' in client:
-            scan = dict([
-                ('ip', client['ip']),
-                ('mac', client['mac']),
-                ('hw', client['oui'])
-            ])
-            scan_list.append(scan)
+            if UNIFI_SKIP_NAMED_GUESTS and re.search('guest', client['name'], re.IGNORECASE):
+                continue
+            else:
+                scan = dict([
+                    ('ip', client['ip']),
+                    ('mac', client['mac']),
+                    ('hw', client['oui'])
+                ])
+                scan_list.append(scan)
 
     devices_json_str = json.dumps(devices)
     devices_json = json.loads(devices_json_str)
-    devices_json_formatted_str = json.dumps(devices_json, indent=2)
+    #devices_json_formatted_str = json.dumps(devices_json, indent=2)
     #print(devices_json_formatted_str)
 
     for device in devices_json:
+        #special case for the udm itself where its ip is the WAN ip instead of its local ip
+        if device['type'] == 'udm':
+            device['ip'] = UNIFI_HOST
         if device['state'] == 1:
             scan = dict([
                 ('ip', device['ip']),
@@ -621,7 +605,7 @@ def copy_pihole_network ():
     sql.execute ("""UPDATE PiHole_Network SET PH_Name = '(unknown)'
                     WHERE PH_Name IS NULL OR PH_Name = '' """)
     # DEBUG
-        # print (sql.rowcount)
+    # print (sql.rowcount)
 
     # Close Pi-hole DB
     sql.execute ("DETACH PH")
@@ -633,8 +617,9 @@ def read_DHCP_leases ():
         sql.execute ("DELETE FROM DHCP_Leases")
         return    
 
-    scp_args = ['scp', DHCP_LEASES_SRC, DHCP_LEASES]
-    cmd_output = subprocess.check_output (scp_args, universal_newlines=True)
+    if DHCP_LEASES_SRC:
+        scp_args = ['scp', DHCP_LEASES_SRC, DHCP_LEASES]
+        cmd_output = subprocess.check_output (scp_args, universal_newlines=True)
 
     # Read DHCP Leases
     # Bugfix #1 - dhcp.leases: lines with different number of columns (5 col)
@@ -656,7 +641,7 @@ def read_DHCP_leases ():
                         VALUES (?, ?, ?, ?, ?)
                      """, data)
     # DEBUG
-        # print (sql.rowcount)
+    # print (sql.rowcount)
 
 #-------------------------------------------------------------------------------
 def save_scanned_devices (p_arpscan_devices, p_cycle_interval):
@@ -680,7 +665,7 @@ def save_scanned_devices (p_arpscan_devices, p_cycle_interval):
                                       WHERE cur_MAC = PH_MAC
                                         AND cur_ScanCycle = ? )""",
                     (cycle,
-                     (int(startTime.strftime('%s')) - 60 * p_cycle_interval),
+                     (int(startTime.strftime('%S')) - 60 * p_cycle_interval),
                      cycle) )
 
 #-------------------------------------------------------------------------------
