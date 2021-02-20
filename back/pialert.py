@@ -551,8 +551,11 @@ def query_unifi_api ():
             if UNIFI_SKIP_NAMED_GUESTS and re.search('guest', client['name'], re.IGNORECASE):
                 continue
             else:
+                ip = client['ip']
+                if ('use_fixedip' in client and client['use_fixedip']):
+                    ip = client['fixed_ip']
                 scan = dict([
-                    ('ip', client['ip']),
+                    ('ip', ip),
                     ('mac', client['mac']),
                     ('hw', client['oui'])
                 ])
