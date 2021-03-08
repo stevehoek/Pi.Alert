@@ -82,6 +82,13 @@
       <div class="navbar-custom-menu">
         <ul class="nav navbar-nav">
 
+          <!-- Last Scan Time and Duration -->
+          <li><a style="pointer-events:none;">Last Scan:</a></li>
+          <li><a id="lastScanTime" style="pointer-events:none;"></a></li>
+          <li><a style="pointer-events:none;">for</a></li>
+          <li><a id="lastScanDuration" style="pointer-events:none;font-weight: bold;"></a></li>
+          <li><a style="pointer-events:none;">on</a></li>
+
           <!-- Server Name -->
           <li><a style="pointer-events:none;"><?php echo gethostname(); ?></a></li>
 

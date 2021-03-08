@@ -139,7 +139,15 @@
                           <input class="form-control" id="txtMAC" type="text" readonly value="--">
                         </div>
                       </div>
-      
+
+                      <!-- Random MAC -->
+                      <div class="form-group">
+                        <label class="col-sm-3 control-label">Random</label>
+                        <div class="col-sm-9" style="padding-top:6px;">
+                          <input class="checkbox blue hidden" id="chkRandomMAC" type="checkbox" disabled>
+                        </div>
+                      </div>
+
                       <!-- Name -->
                       <div class="form-group">
                         <label class="col-sm-3 control-label">Name</label>
@@ -366,7 +374,7 @@
 
                       <!-- New Device -->
                       <div class="form-group">
-                        <label class="col-sm-5 control-label">New Device:</label>
+                        <label class="col-sm-5 control-label">New Device</label>
                         <div class="col-sm-7" style="padding-top:6px;">
                           <input class="checkbox orange hidden" id="chkNewDevice" type="checkbox">
                         </div>
@@ -915,6 +923,7 @@ function getDeviceData (updatePanelData=false) {
       $('#pageTitle').html ('Device not found: <small>'+ mac +'</small>');
 
       $('#txtMAC').val             ('--');
+      $('#chkRandomMAC').iCheck    ('uncheck'); 
       $('#txtName').val            ('--');
       $('#txtOwner').val           ('--');
       $('#txtDeviceType').val      ('--');
@@ -978,6 +987,7 @@ function getDeviceData (updatePanelData=false) {
       // Device info
       if (updatePanelData) {
         $('#txtMAC').val                             (deviceData['dev_MAC']);
+        if (deviceData['dev_RandomMAC'] == 1)        {$('#chkRandomMAC').iCheck('check');} 
         $('#txtName').val                            (deviceData['dev_Name']);
         $('#txtOwner').val                           (deviceData['dev_Owner']);
         $('#txtDeviceType').val                      (deviceData['dev_DeviceType']);

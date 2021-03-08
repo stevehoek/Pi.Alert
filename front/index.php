@@ -154,11 +154,15 @@
 
 <!-- page script ----------------------------------------------------------- -->
 <script>
-  var deviceStatus    = 'all';
-  var parTableRows    = 'Front_Devices_Rows';
-  var parTableOrder   = 'Front_Devices_Order';
-  var tableRows       = 10;
-  var tableOrder      = [[3,'desc'], [0,'asc']];
+  var deviceStatus        = 'all';
+  var parTableRows        = 'Front_Devices_Rows';
+  var parTableOrder       = 'Front_Devices_Order';
+  var parLastScanTime     = 'FrontBack_Scan_Time';
+  var parLastScanDuration = 'FrontBack_Scan_Duration';
+  var tableRows           = 10;
+  var tableOrder          = [[3,'desc'], [0,'asc']];
+  var lastScanTime        = '';
+  var lastScanDuration    = '';
 
   // Read parameters & Initialize components
   main();
@@ -188,6 +192,18 @@ function main () {
       getDevicesTotals();
       getDevicesList (deviceStatus);
     });
+  });
+
+  // get parameter value
+  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
+    var result = JSON.parse(data);
+    lastScanTime = result;
+  });
+
+  // get parameter value
+  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
+    var result = JSON.parse(data);
+    lastScanDuration = result;
   });
 }
 
@@ -283,6 +299,9 @@ function getDevicesTotals () {
     $('#devicesConnected').html  (totalsDevices[1].toLocaleString());
     $('#devicesNew').html        (totalsDevices[2].toLocaleString());
     $('#devicesDown').html       (totalsDevices[3].toLocaleString());
+
+    $('#lastScanTime').html      (lastScanTime);
+    $('#lastScanDuration').html  (lastScanDuration);
 
     // Timer for refresh data
     newTimerRefreshData (getDevicesTotals);

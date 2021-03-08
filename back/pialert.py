@@ -30,6 +30,11 @@ import io
 import smtplib
 import csv
 import json
+import ipaddress
+
+from datetime import timezone
+from datetime import timedelta
+from string import Formatter
 
 
 #===============================================================================
@@ -51,10 +56,12 @@ else:
 #===============================================================================
 def main ():
     global startTime
+    global startTimeActual
     global cycle
     global log_timestamp
     global sql_connection
     global sql
+    global dbupdated
 
     # Header
     print ('\nPi.Alert ' + VERSION +' ('+ VERSION_DATE +')')
@@ -66,10 +73,11 @@ def main ():
     # DB
     sql_connection = None
     sql            = None
+    dbupdated      = False
 
     # Timestamp
-    startTime = datetime.datetime.now()
-    startTime = startTime.replace (second=0, microsecond=0)
+    startTimeActual = datetime.datetime.now()
+    startTime = startTimeActual.replace (second=0, microsecond=0)
 
     # Check parameters
     if len(sys.argv) != 2 :
@@ -393,7 +401,7 @@ def scan_network ():
     elif UNIFI_ACTIVE:
         # UniFi method
         print ('    UniFi Method...')
-        scan_devices = query_unifi_api()
+        scan_devices = query_unifi_api(cycle_interval)
     else:
         print ('    ERROR: No primary scan method specified in the config!')
         return 1
@@ -453,6 +461,10 @@ def scan_network ():
     # Skip repeated notifications
     print ('    Skipping repeated notifications...')
     skip_repeated_notifications ()
+
+    # Save last scan time
+    print ('    Saving last scan time...')
+    save_last_scan_time ()
 
     # Commit changes
     sql_connection.commit()
@@ -514,6 +526,8 @@ def execute_arpscan (pRetries):
     for device in devices_list :
         if device['mac'] not in unique_mac: 
             unique_mac.append(device['mac'])
+            device['randomMAC'] = False
+            device['comments'] = ''
             unique_devices.append(device)
 
     # DEBUG
@@ -530,42 +544,70 @@ def execute_arpscan (pRetries):
 
 
 #-------------------------------------------------------------------------------
-def query_unifi_api ():
+def query_unifi_api (p_cycle_interval):
+    # Connect to the UniFI REST API and login
     unifi = UnifiClient(host=UNIFI_HOST, port=UNIFI_PORT, username=UNIFI_USERNAME, password=UNIFI_PASSWORD, server_type=UNIFI_SERVER_TYPE)
     unifi.login()
 
-    clients = unifi.list_clients()
+    configured_clients = unifi.list_configured_clients()
+    configured_clients_json_str = json.dumps(configured_clients)
+    configured_clients_json = json.loads(configured_clients_json_str)
+    #configured_clients_json_formatted_str = json.dumps(configured_clients_json, indent=2)
+    #print(configured_clients_json_formatted_str)
+
     devices = unifi.list_devices()
-
-    #unifi.logout()
-
-    clients_json_str = json.dumps(clients)
-    clients_json = json.loads(clients_json_str)
-    #clients_json_formatted_str = json.dumps(clients_json, indent=2)
-    #print(clients_json_formatted_str)
-
-    # Create Userdict of devices
-    scan_list = []
-    for client in clients_json:
-        if 'ip' in client:
-            if UNIFI_SKIP_NAMED_GUESTS and re.search('guest', client['name'], re.IGNORECASE):
-                continue
-            else:
-                ip = client['ip']
-                if ('use_fixedip' in client and client['use_fixedip']):
-                    ip = client['fixed_ip']
-                scan = dict([
-                    ('ip', ip),
-                    ('mac', client['mac']),
-                    ('hw', client['oui'])
-                ])
-                scan_list.append(scan)
-
     devices_json_str = json.dumps(devices)
     devices_json = json.loads(devices_json_str)
     #devices_json_formatted_str = json.dumps(devices_json, indent=2)
     #print(devices_json_formatted_str)
 
+    #unifi.logout()
+
+    # Create Userdict of clients
+    scan_list = []
+    for configured_client in configured_clients_json:
+        if ('blocked' in configured_client and configured_client['blocked']):
+            continue
+        if (UNIFI_SKIP_GUESTS and 'is_guest' in configured_client and configured_client['is_guest']):
+            continue
+        else: #(client['last_seen'] >= timestamp):
+            client_detail = unifi.get_client_details(configured_client['mac'])
+            if (len(client_detail) < 1):
+                continue
+            client = client_detail[0]
+            if 'ip' in client:
+                if UNIFI_SKIP_NAMED_GUESTS and 'name' in client and re.search('guest', client['name'], re.IGNORECASE):
+                    continue
+                else:
+                    ip = client['ip']
+                    mac = client['mac'].upper()
+
+                    if ('use_fixedip' in client and client['use_fixedip']):
+                        ip = client['fixed_ip']
+
+                    try:
+                        address = ipaddress.IPv4Address(ip)
+                    except ValueError:
+                        continue # not a valid IP address
+                    if UNIFI_REQUIRE_PRIVATE_IP and not address.is_private:
+                        continue # is a private address
+
+                    randomMAC = False
+                    comments = ''
+                    if (mac[1] == '2' or mac[1] == '6' or mac[1] == 'A' or mac[1] == 'E'):
+                        randomMAC = True
+                        comments = 'This device has a random MAC address from iOS or Android'
+
+                    scan = dict([
+                        ('ip', ip),
+                        ('mac', mac),
+                        ('hw', client['oui']),
+                        ('randomMAC', randomMAC),
+                        ('comments', comments)
+                    ])
+                    scan_list.append(scan)
+
+    # Create Userdict of devices
     for device in devices_json:
         #special case for the udm itself where its ip is the WAN ip instead of its local ip
         if device['type'] == 'udm':
@@ -574,7 +616,9 @@ def query_unifi_api ():
             scan = dict([
                 ('ip', device['ip']),
                 ('mac', device['mac']),
-                ('hw', 'Ubiquiti Networks Inc.')
+                ('hw', 'Ubiquiti Networks Inc.'),
+                ('randomMAC', False),
+                ('comments', '')
             ])
             scan_list.append(scan)
 
@@ -654,8 +698,8 @@ def save_scanned_devices (p_arpscan_devices, p_cycle_interval):
 
     # Insert new arp-scan devices
     sql.executemany ("INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, "+
-                     "    cur_IP, cur_Vendor, cur_ScanMethod) "+
-                     "VALUES ("+ cycle + ", :mac, :ip, :hw, 'arp-scan')",
+                     "    cur_IP, cur_Vendor, cur_ScanMethod, cur_RandomMAC, cur_Comments) "+
+                     "VALUES ("+ cycle + ", :mac, :ip, :hw, 'arp-scan', :randomMAC, :comments)",
                      p_arpscan_devices) 
 
     # Insert Pi-hole devices
@@ -776,14 +820,14 @@ def create_new_devices ():
     sql.execute ("""INSERT INTO Devices (dev_MAC, dev_name, dev_Vendor,
                         dev_LastIP, dev_FirstConnection, dev_LastConnection,
                         dev_ScanCycle, dev_AlertEvents, dev_AlertDeviceDown,
-                        dev_PresentLastScan, dev_NewDevice)
+                        dev_PresentLastScan, dev_NewDevice, dev_RandomMAC, dev_Comments)
                     SELECT cur_MAC, '(unknown)', cur_Vendor, cur_IP, ?, ?,
-                        1, 1, 0, 1, 1
+                        ?, ?, ?, 1, 1, cur_RandomMAC, cur_Comments
                     FROM CurrentScan
                     WHERE cur_ScanCycle = ? 
                       AND NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = cur_MAC) """,
-                    (startTime, startTime, cycle) ) 
+                    (startTime, startTime, DEFAULT_SCAN_CYCLE, DEFAULT_ALERT_EVENTS, DEFAULT_ALERT_DOWN, cycle) ) 
 
     # Pi-hole - Insert events for new devices
     # NOT STRICYLY NECESARY (Devices can be created through Current_Scan)
@@ -807,11 +851,11 @@ def create_new_devices ():
                         dev_ScanCycle, dev_AlertEvents, dev_AlertDeviceDown,
                         dev_PresentLastScan, dev_NewDevice)
                     SELECT PH_MAC, PH_Name, PH_Vendor, IFNULL (PH_IP,'-'),
-                        ?, ?, 1, 1, 0, 1, 1
+                        ?, ?, ?, ?, ?, 1, 1
                     FROM PiHole_Network
                     WHERE NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = PH_MAC) """,
-                    (startTime, startTime) ) 
+                    (startTime, startTime, DEFAULT_SCAN_CYCLE, DEFAULT_ALERT_EVENTS, DEFAULT_ALERT_DOWN) ) 
 
     # DHCP Leases - Insert events for new devices
     print_log ('New devices - 5 DHCP Leases Events')
@@ -843,11 +887,11 @@ def create_new_devices ():
                         (SELECT DHCP_IP FROM DHCP_Leases AS D2
                          WHERE D2.DHCP_MAC = D1.DHCP_MAC
                          ORDER BY DHCP_DateTime DESC LIMIT 1),
-                        '(unknown)', ?, ?, 1, 1, 0, 1, 1
+                        '(unknown)', ?, ?, ?, ?, ?, 1, 1
                     FROM DHCP_Leases AS D1
                     WHERE NOT EXISTS (SELECT 1 FROM Devices
                                       WHERE dev_MAC = DHCP_MAC) """,
-                    (startTime, startTime) ) 
+                    (startTime, startTime, DEFAULT_SCAN_CYCLE, DEFAULT_ALERT_EVENTS, DEFAULT_ALERT_DOWN) ) 
 
     # sql.execute ("""INSERT INTO Devices (dev_MAC, dev_name, dev_Vendor,
     #                     dev_LastIP, dev_FirstConnection, dev_LastConnection,
@@ -1218,6 +1262,80 @@ def skip_repeated_notifications ():
     print_log ('Skip Repeated end')
 
 
+#-------------------------------------------------------------------------------
+def strfdelta(tdelta, fmt='{D:02}d {H:02}h {M:02}m {S:02.0f}s', inputtype='timedelta'):
+    """Convert a datetime.timedelta object or a regular number to a custom-
+    formatted string, just like the stftime() method does for datetime.datetime
+    objects.
+
+    The fmt argument allows custom formatting to be specified.  Fields can 
+    include seconds, minutes, hours, days, and weeks.  Each field is optional.
+
+    Some examples:
+        '{D:02}d {H:02}h {M:02}m {S:02.0f}s' --> '05d 08h 04m 02s' (default)
+        '{W}w {D}d {H}:{M:02}:{S:02.0f}'     --> '4w 5d 8:04:02'
+        '{D:2}d {H:2}:{M:02}:{S:02.0f}'      --> ' 5d  8:04:02'
+        '{H}h {S:.0f}s'                       --> '72h 800s'
+
+    The inputtype argument allows tdelta to be a regular number instead of the  
+    default, which is a datetime.timedelta object.  Valid inputtype strings: 
+        's', 'seconds', 
+        'm', 'minutes', 
+        'h', 'hours', 
+        'd', 'days', 
+        'w', 'weeks'
+    """
+
+    # Convert tdelta to integer seconds.
+    if inputtype == 'timedelta':
+        remainder = tdelta.total_seconds()
+    elif inputtype in ['s', 'seconds']:
+        remainder = float(tdelta)
+    elif inputtype in ['m', 'minutes']:
+        remainder = float(tdelta)*60
+    elif inputtype in ['h', 'hours']:
+        remainder = float(tdelta)*3600
+    elif inputtype in ['d', 'days']:
+        remainder = float(tdelta)*86400
+    elif inputtype in ['w', 'weeks']:
+        remainder = float(tdelta)*604800
+
+    f = Formatter()
+    desired_fields = [field_tuple[1] for field_tuple in f.parse(fmt)]
+    possible_fields = ('Y','m','W', 'D', 'H', 'M', 'S', 'mS', 'µS')
+    constants = {'Y':86400*365.24,'m': 86400*30.44 ,'W': 604800, 'D': 86400, 'H': 3600, 'M': 60, 'S': 1, 'mS': 1/pow(10,3) , 'µS':1/pow(10,6)}
+    values = {}
+    for field in possible_fields:
+        if field in desired_fields and field in constants:
+            Quotient, remainder = divmod(remainder, constants[field])
+            values[field] = int(Quotient) if field != 'S' else Quotient + remainder
+    return f.format(fmt, **values)
+
+
+#-------------------------------------------------------------------------------
+def save_last_scan_time ():
+    print_log ('Save Last Scan Time')
+
+    endTime = datetime.datetime.now()
+    
+    scanDuration = endTime - startTimeActual
+
+    startTimeFormated = startTimeActual.strftime ('%m-%d-%Y %I:%M %p')
+    scanDurationFormated = strfdelta(scanDuration, '{M:02}m {S:02.0f}s')
+
+    sql.execute ("DELETE FROM Parameters WHERE par_ID = 'FrontBack_Scan_Time'")
+    sql.execute ("""INSERT INTO Parameters (par_ID, par_Value)
+                    VALUES ('FrontBack_Scan_Time', ?) """,
+                    (startTimeFormated, ) ) 
+
+    sql.execute ("DELETE FROM Parameters WHERE par_ID = 'FrontBack_Scan_Duration'")
+    sql.execute ("""INSERT INTO Parameters (par_ID, par_Value)
+                    VALUES ('FrontBack_Scan_Duration', ?) """,
+                    (scanDurationFormated, ) ) 
+
+    print_log ('Save Last Scan Time end')
+
+
 #===============================================================================
 # REPORTING
 #===============================================================================
@@ -1483,6 +1601,7 @@ def send_email (pText, pHTML):
 def openDB ():
     global sql_connection
     global sql
+    global dbupdated
 
     # Check if DB is open
     if sql_connection != None :
@@ -1496,6 +1615,29 @@ def openDB ():
     sql_connection.text_factory = str
     sql_connection.row_factory = sqlite3.Row
     sql = sql_connection.cursor()
+
+    if not dbupdated:
+        updateDB()
+        dbupdated = True
+
+
+#-------------------------------------------------------------------------------
+def updateDB ():
+    sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('CurrentScan') 
+                    WHERE name='cur_RandomMAC' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute ("""ALTER TABLE CurrentScan ADD COLUMN cur_RandomMAC BOOLEAN NOT NULL DEFAULT (0) CHECK (cur_RandomMAC IN (0, 1) )""")
+
+    sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('CurrentScan') 
+                    WHERE name='cur_Comments' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute ("""ALTER TABLE CurrentScan ADD COLUMN cur_Comments TEXT""")
+
+    sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('Devices') 
+                    WHERE name='dev_RandomMAC' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute ("""ALTER TABLE Devices ADD COLUMN dev_RandomMAC BOOLEAN NOT NULL DEFAULT (0) CHECK (dev_RandomMAC IN (0, 1) )""")
+
 
 #-------------------------------------------------------------------------------
 def closeDB ():
