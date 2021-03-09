@@ -42,13 +42,17 @@ from string import Formatter
 #===============================================================================
 PIALERT_BACK_PATH = os.path.dirname(os.path.abspath(__file__))
 PIALERT_PATH = PIALERT_BACK_PATH + "/.."
-
+PIALERT_CONFIG_FILE = "/config/pialert.conf"
+PIALERT_VERSION_FILE = "/config/version.conf"
+if __debug__:
+    PIALERT_CONFIG_FILE = "/config/pialert.debug.conf"
+    
 if (sys.version_info > (3,0)):
-    exec(open(PIALERT_PATH + "/config/version.conf").read())
-    exec(open(PIALERT_PATH + "/config/pialert.conf").read())
+    exec(open(PIALERT_PATH + PIALERT_VERSION_FILE).read())
+    exec(open(PIALERT_PATH + PIALERT_CONFIG_FILE).read())
 else:
-    execfile (PIALERT_PATH + "/config/version.conf")
-    execfile (PIALERT_PATH + "/config/pialert.conf")
+    execfile (PIALERT_PATH + PIALERT_VERSION_FILE)
+    execfile (PIALERT_PATH + PIALERT_CONFIG_FILE)
 
 
 #===============================================================================

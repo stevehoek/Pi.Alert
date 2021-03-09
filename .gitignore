@@ -1,15 +1,15 @@
 .gitignore
-back/clients.json
-back/devices.json
-Pi.Alert.code-workspace
-db/pialert - Copy.db
-unificontrol/
-log/report_output.txt
-log/report_output.html
-log/IP_changes.log
-log/report_output.txt
-log/report_output.html
-log/IP_changes.log
-back/configured_clients.json
 .vscode/settings.json
 .vscode/launch.json
+Pi.Alert.code-workspace
+back/clients.json
+back/devices.json
+back/configured_clients.json
+config/pialert.debug.conf
+db/pialert.debug.db
+log/report_output.txt
+log/report_output.html
+log/IP_changes.log
+log/report_output.txt
+log/report_output.html
+unificontrol/
