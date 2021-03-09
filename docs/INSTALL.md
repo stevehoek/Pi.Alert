@@ -16,11 +16,11 @@ Estimated time: 20'
 
 ## One-step Automated Install:
 <!--- --------------------------------------------------------------------- --->
-`curl -sSL https://github.com/pucherot/Pi.Alert/raw/main/install/pialert_install.sh | bash`
+`curl -sSL https://github.com/stevehoek/Pi.Alert/raw/main/install/pialert_install.sh | bash`
 
 ## One-step Automated Update:
 <!--- --------------------------------------------------------------------- --->
-`curl -sSL https://github.com/pucherot/Pi.Alert/raw/main/install/pialert_update.sh | bash`
+`curl -sSL https://github.com/stevehoek/Pi.Alert/raw/main/install/pialert_update.sh | bash`
 
 
 ## Installation process (step by step)
@@ -196,7 +196,7 @@ block is not necessary
 5.1 - Download Pi.Alert and uncompress
   ```
   cd
-  curl -LO https://github.com/pucherot/Pi.Alert/raw/main/tar/pialert_latest.tar
+  curl -LO https://github.com/stevehoek/Pi.Alert/raw/main/tar/pialert_latest.tar
   tar xvf pialert_latest.tar
   rm pialert_latest.tar
   ```

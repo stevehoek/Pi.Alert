@@ -4,7 +4,7 @@
 #
 #  presence.php - Front module. Device Presence calendar page
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -156,7 +156,12 @@
 <!-- page script ----------------------------------------------------------- -->
 <script>
 
-  var deviceStatus = 'all';
+  var parLastScanTime     = 'FrontBack_Scan_Time';
+  var parLastScanDuration = 'FrontBack_Scan_Duration';
+
+  var deviceStatus        = 'all';
+  var lastScanTime        = '';
+  var lastScanDuration    = '';
 
   // Read parameters & Initialize components
   main();
@@ -176,6 +181,22 @@ function main () {
     if ($(nav.target).attr('href') == '#panPresence') {
       $('#calendar').fullCalendar('rerenderEvents');
     }
+  });
+  
+  // HEADER update
+  // get parameter value
+  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
+    var result = JSON.parse(data);
+    lastScanTime = result;
+
+    // get parameter value
+    $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
+      var result = JSON.parse(data);
+      lastScanDuration = result;
+
+      $('#lastScanTime').html      (lastScanTime);
+      $('#lastScanDuration').html  (lastScanDuration);
+    });
   });
 }
 

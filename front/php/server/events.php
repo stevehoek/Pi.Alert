@@ -5,7 +5,7 @@
 //
 //  events.php - Front module. Server side. Manage Events
 //------------------------------------------------------------------------------
-//  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+//  GNU GPLv3
 //------------------------------------------------------------------------------
 
 

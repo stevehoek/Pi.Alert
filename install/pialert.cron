@@ -4,7 +4,7 @@
 #
 #  pialert.cron - Back module. Crontab jobs
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #-------------------------------------------------------------------------------
 
 0 3 * * 1      python ~/pialert/back/pialert.py update_vendors >~/pialert/log/pialert.vendors.log  2>&1

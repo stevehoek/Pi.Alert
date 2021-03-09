@@ -4,24 +4,24 @@
 #
 #  footer.php - Front module. Common footer to all the web pages 
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
   <!-- Main Footer -->
   <footer class="main-footer">
     <!-- Default to the left -->
 
-    <!-- &copy; 2020 Puche -->
+    <!-- &copy; 2021 GNU GPLv3 -->
     <?php
       $conf_file = '../config/version.conf';
       $conf_data = parse_ini_file($conf_file);
-      echo '<span style="display:inline-block; transform: rotate(180deg)">&copy;</span> '. $conf_data['VERSION_YEAR'] .' Puche';
+      echo '<span style="display:inline-block; transform: rotate(180deg)">&copy;</span> '. $conf_data['VERSION_YEAR'] .' GNU GPLv3';
     ?>
 
     <!-- To the right -->
     <div class="pull-right no-hidden-xs">
 
-    <!-- Pi.Alert  2.50  <small>(2019-12-30)</small> -->
+    <!-- Pi.Alert  3.00  <small>(2021-03-08)</small> -->
     <?php
       $conf_file = '../config/version.conf';
       $conf_data = parse_ini_file($conf_file);

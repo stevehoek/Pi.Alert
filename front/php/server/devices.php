@@ -5,7 +5,7 @@
 //
 //  devices.php - Front module. Server side. Manage Devices
 //------------------------------------------------------------------------------
-//  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+//  GNU GPLv3
 //------------------------------------------------------------------------------
 
 

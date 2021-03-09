@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 #
 #-------------------------------------------------------------------------------
-#  Pi.Alert  v2.70  /  2021-02-01
+#  Pi.Alert
 #  Open Source Network Guard / WIFI & LAN intrusion detector 
 #
 #  pialert.py - Back module. Network scanner
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #-------------------------------------------------------------------------------
 
 

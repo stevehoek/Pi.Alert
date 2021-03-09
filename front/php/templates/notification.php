@@ -4,7 +4,7 @@
 #
 #  notificacion.php - Front module. Common notification & modal window
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <!-- Modal warning -->

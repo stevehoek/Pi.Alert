@@ -4,7 +4,7 @@
 #
 #  devices.php - Front module. Devices list page
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -194,16 +194,20 @@ function main () {
     });
   });
 
+  // HEADER update
   // get parameter value
   $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
     var result = JSON.parse(data);
     lastScanTime = result;
-  });
 
-  // get parameter value
-  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
-    var result = JSON.parse(data);
-    lastScanDuration = result;
+    // get parameter value
+    $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
+      var result = JSON.parse(data);
+      lastScanDuration = result;
+
+      $('#lastScanTime').html      (lastScanTime);
+      $('#lastScanDuration').html  (lastScanDuration);
+    });
   });
 }
 
@@ -299,9 +303,6 @@ function getDevicesTotals () {
     $('#devicesConnected').html  (totalsDevices[1].toLocaleString());
     $('#devicesNew').html        (totalsDevices[2].toLocaleString());
     $('#devicesDown').html       (totalsDevices[3].toLocaleString());
-
-    $('#lastScanTime').html      (lastScanTime);
-    $('#lastScanDuration').html  (lastScanDuration);
 
     // Timer for refresh data
     newTimerRefreshData (getDevicesTotals);

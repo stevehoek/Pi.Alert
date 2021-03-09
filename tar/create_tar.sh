@@ -5,7 +5,7 @@
 #
 #  create_tar.sh - Create the tar file for installation
 # ------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 # ------------------------------------------------------------------------------
 
 PIALERT_VERSION=`awk '$1=="VERSION" { print $3 }' ../config/version.conf | tr -d \'`

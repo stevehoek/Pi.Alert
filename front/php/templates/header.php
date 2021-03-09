@@ -4,7 +4,7 @@
 #
 #  header.php - Front module. Common header to all the web pages 
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <!DOCTYPE html> 
@@ -83,11 +83,11 @@
         <ul class="nav navbar-nav">
 
           <!-- Last Scan Time and Duration -->
-          <li><a style="pointer-events:none;">Last Scan:</a></li>
-          <li><a id="lastScanTime" style="pointer-events:none;"></a></li>
-          <li><a style="pointer-events:none;">for</a></li>
-          <li><a id="lastScanDuration" style="pointer-events:none;font-weight: bold;"></a></li>
-          <li><a style="pointer-events:none;">on</a></li>
+          <li><a style="pointer-events:none;" class="hidden-xs">Last Scan:</a></li>
+          <li><a id="lastScanTime" style="pointer-events:none;" class="hidden-xs"></a></li>
+          <li><a style="pointer-events:none;" class="hidden-xs">for</a></li>
+          <li><a id="lastScanDuration" style="pointer-events:none;font-weight: bold;" class="hidden-xs"></a></li>
+          <li><a style="pointer-events:none;" class="hidden-xs">on</a></li>
 
           <!-- Server Name -->
           <li><a style="pointer-events:none;"><?php echo gethostname(); ?></a></li>
@@ -106,8 +106,8 @@
               <li class="user-header">
                 <img src="img/pialertLogoWhite.png" class="img-circle" alt="Pi.Alert Logo" style="border-color:transparent">
                 <p>
-                  Open Source Network Guard
-                  <small>Designed for Raspberry Pi</small>
+                  Pi.Alert 
+                  <small>Open Source Network Monitor</small>
                 </p>
               </li>
 
@@ -115,13 +115,13 @@
               <li class="user-body">
                 <div class="row">
                   <div class="col-xs-4 text-center">
-                    <a target="_blank" href="https://github.com/pucherot/Pi.Alert">GitHub Pi.Alert</a>
+                    <a target="_blank" href="https://github.com/stevehoek/Pi.Alert">GitHub Pi.Alert</a>
                   </div>
                   <div class="col-xs-4 text-center">
-                    <a href="mailto:pi.alert.application@gmail.com">email Support</a>
+                    <a href="mailto:steve.hoek@gmail.com">email Support</a>
                   </div>
                   <div class="col-xs-4 text-center">
-                    <a target="_blank" href="https://github.com/pucherot/Pi.Alert/blob/main/LICENSE.txt">GNU GPLv3</a>
+                    <a target="_blank" href="https://github.com/stevehoek/Pi.Alert/blob/main/LICENSE.txt">GNU GPLv3</a>
                   </div>
                   <!--
                   <div class="col-xs-4 text-center">

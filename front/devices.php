@@ -4,7 +4,7 @@
 #
 #  devices.php - Front module. Devices list page
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php

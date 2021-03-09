@@ -5,7 +5,7 @@
 #
 #  pialert_update.sh - Update script
 # ------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 # ------------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ download_pialert() {
   fi
   
   print_msg "- Downloading update file..."
-  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/pucherot/Pi.Alert/raw/main/tar/pialert_latest.tar
+  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/stevehoek/Pi.Alert/raw/main/tar/pialert_latest.tar
   echo ""
 
   print_msg "- Uncompressing tar file"

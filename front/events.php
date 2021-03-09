@@ -4,7 +4,7 @@
 #
 #  events.php - Front module. Events page
 #-------------------------------------------------------------------------------
-#  Puche 2021        pi.alert.application@gmail.com        GNU GPLv3
+#  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
 <?php
@@ -174,12 +174,16 @@
 
 <!-- page script ----------------------------------------------------------- -->
 <script>
-  var parPeriod       = 'Front_Events_Period';
-  var parTableRows    = 'Front_Events_Rows';
+  var parPeriod           = 'Front_Events_Period';
+  var parTableRows        = 'Front_Events_Rows';
+  var parLastScanTime     = 'FrontBack_Scan_Time';
+  var parLastScanDuration = 'FrontBack_Scan_Duration';
 
-  var eventsType      = 'all';
-  var period          = '';
-  var tableRows       = 10;
+  var eventsType          = 'all';
+  var period              = '';
+  var tableRows           = 10;
+  var lastScanTime        = '';
+  var lastScanDuration    = '';
   
   // Read parameters & Initialize components
   main();
@@ -208,6 +212,22 @@ function main () {
       // query data
       getEventsTotals();
       getEvents (eventsType);
+    });
+  });
+
+  // HEADER update
+  // get parameter value
+  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
+    var result = JSON.parse(data);
+    lastScanTime = result;
+
+    // get parameter value
+    $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
+      var result = JSON.parse(data);
+      lastScanDuration = result;
+
+      $('#lastScanTime').html      (lastScanTime);
+      $('#lastScanDuration').html  (lastScanDuration);
     });
   });
 }
