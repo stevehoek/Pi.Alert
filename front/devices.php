@@ -16,6 +16,8 @@
 
 <!-- Content header--------------------------------------------------------- -->
     <section class="content-header">
+      <?php require 'php/templates/notification.php'; ?>
+
       <h1 id="pageTitle">
          Devices
       </h1>
@@ -154,11 +156,15 @@
 
 <!-- page script ----------------------------------------------------------- -->
 <script>
-  var deviceStatus    = 'all';
-  var parTableRows    = 'Front_Devices_Rows';
-  var parTableOrder   = 'Front_Devices_Order';
-  var tableRows       = 10;
-  var tableOrder      = [[3,'desc'], [0,'asc']];
+  var deviceStatus        = 'all';
+  var parTableRows        = 'Front_Devices_Rows';
+  var parTableOrder       = 'Front_Devices_Order';
+  var parLastScanTime     = 'FrontBack_Scan_Time';
+  var parLastScanDuration = 'FrontBack_Scan_Duration';
+  var tableRows           = 10;
+  var tableOrder          = [[3,'desc'], [0,'asc']];
+  var lastScanTime        = '';
+  var lastScanDuration    = '';
 
   // Read parameters & Initialize components
   main();
@@ -187,6 +193,22 @@ function main () {
       // query data
       getDevicesTotals();
       getDevicesList (deviceStatus);
+    });
+  });
+
+  // HEADER update
+  // get parameter value
+  $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
+    var result = JSON.parse(data);
+    lastScanTime = result;
+
+    // get parameter value
+    $.get('php/server/parameters.php?action=get&parameter='+ parLastScanDuration, function(data) {
+      var result = JSON.parse(data);
+      lastScanDuration = result;
+
+      $('#lastScanTime').html      (lastScanTime);
+      $('#lastScanDuration').html  (lastScanDuration);
     });
   });
 }

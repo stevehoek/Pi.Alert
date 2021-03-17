@@ -16,6 +16,8 @@
 
 <!-- Content header--------------------------------------------------------- -->
     <section class="content-header">
+      <?php require 'php/templates/notification.php'; ?>
+
       <h1 id="pageTitle">
          Events
       </h1>

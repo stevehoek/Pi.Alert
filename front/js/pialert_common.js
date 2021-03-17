@@ -119,3 +119,22 @@ function debugTimer () {
 }
 
 
+// -----------------------------------------------------------------------------
+function refreshDevices (cycle) {
+  // show temporal notification
+  time = (cycle * 2);
+  msg = "Refreshing.  Please wait up to " + time + " seconds...";
+  $("#alert-message").html(msg);
+  $("#notification").fadeIn(1, function() {
+
+    // send command to server
+    $.get('php/server/commands.php?action=refreshDevices&cycle=' + cycle,
+    function(data) {
+      $("#notification").fadeOut(500);
+      if (data != "") {
+        console.log(data);
+        window.location.href = window.location.href;
+      }
+    } );
+  } );
+}

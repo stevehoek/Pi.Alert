@@ -90,7 +90,10 @@
           <li><a style="pointer-events:none;" class="hidden-xs">on</a></li>
 
           <!-- Server Name -->
-          <li><a style="pointer-events:none;"><?php echo gethostname(); ?></a></li>
+          <li><a style="pointer-events:none;" class="hidden-xs"><?php echo gethostname(); ?></a></li>
+
+          <!-- Refresh -->
+          <li><a href="javascript:refreshDevices(15);"><i class="fa fa-retweet"></i><span> Refresh</span></a></li>
 
           <!-- Header right info -->
           <li class="dropdown user user-menu">

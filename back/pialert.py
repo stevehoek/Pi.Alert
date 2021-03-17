@@ -44,7 +44,10 @@ PIALERT_BACK_PATH = os.path.dirname(os.path.abspath(__file__))
 PIALERT_PATH = PIALERT_BACK_PATH + "/.."
 PIALERT_CONFIG_FILE = "/config/pialert.conf"
 PIALERT_VERSION_FILE = "/config/version.conf"
-if __debug__:
+# Python by default defines __debug__ to True; 
+# use "pythonArgs": ["-O"] in the VSCode launch.json to turn on code optimization
+# which will set it to False during debugging
+if not __debug__:
     PIALERT_CONFIG_FILE = "/config/pialert.debug.conf"
     
 if (sys.version_info > (3,0)):
@@ -134,8 +137,10 @@ def check_internet_IP ():
     # Check result = IP
     if internet_IP == "" :
         print ('    Error retrieving Internet IP')
-        print ('    Exiting...\n')
-        return 1
+        openDB()
+        log_internet_down_event ()
+        closeDB()
+        return 0
     print ('   ', internet_IP)
 
     # Get previous stored IP
@@ -151,6 +156,8 @@ def check_internet_IP ():
         print ('        IP updated')
     else :
         print ('    No changes to perform')
+
+    update_internet_device ()
     closeDB()
 
     # Get Dynamic DNS IP
@@ -184,6 +191,7 @@ def get_internet_IP ():
     # Using 'dig'
     dig_args = ['dig', '+short', '-4', 'myip.opendns.com', '@resolver1.opendns.com']
     cmd_output = subprocess.check_output (dig_args, universal_newlines=True)
+    cmd_output = cmd_output.replace('\n','')
 
     ## BUGFIX #12 - Query IPv4 address (not IPv6)
     ## Using 'curl' instead of 'dig'
@@ -227,8 +235,8 @@ def get_previous_internet_IP ():
     if (sqlRow is None):
         sql.execute ("""INSERT INTO Devices  
                         VALUES ('Internet', 
-                        'Internet', 
-                        'House', 
+                        'Internet Connection', 
+                        'Home', 
                         'Router', 
                         'ISP', 
                         0, 
@@ -247,6 +255,12 @@ def get_previous_internet_IP ():
                         1,
                         0,
                         '')""" )
+        sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+                            eve_EventType, eve_AdditionalInfo,
+                            eve_PendingAlertEmail)
+                        VALUES ('Internet', ?, ?, 'New Device',
+                            '', 1) """,
+                        ('0.0.0.0', startTime) )
         previous_IP = '0.0.0.0'
     else:
         previous_IP = sqlRow[0]
@@ -259,13 +273,18 @@ def save_new_internet_IP (pNewIP):
     # Log new IP into logfile
     append_line_to_file (LOG_PATH + '/IP_changes.log', str(startTime) +'\t'+ pNewIP +'\n')
 
+    prevIP = get_previous_internet_IP()
+    eventType = 'Internet IP Changed'
+    if (prevIP == '0.0.0.0'):
+        eventType = 'Connected'
+
     # Save event
     sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
-                    VALUES ('Internet', ?, ?, 'Internet IP Changed',
+                    VALUES ('Internet', ?, ?, ?,
                         'Previous Internet IP: '|| ?, 1) """,
-                    (pNewIP, startTime, get_previous_internet_IP() ) )
+                    (pNewIP, startTime, eventType, prevIP ) )
 
     # Save new IP
     sql.execute ("""UPDATE Devices SET dev_LastIP = ?
@@ -275,19 +294,51 @@ def save_new_internet_IP (pNewIP):
     # commit changes
     sql_connection.commit()
     
+
 #-------------------------------------------------------------------------------
-def check_IP_format (pIP):
-    # Check IP format
-    IPv4SEG  = r'(?:25[0-5]|(?:2[0-4]|1{0,1}[0-9]){0,1}[0-9])'
-    IPv4ADDR = r'(?:(?:' + IPv4SEG + r'\.){3,3}' + IPv4SEG + r')'
-    IP = re.search(IPv4ADDR, pIP)
+def log_internet_down_event ():
+    # Log new IP into logfile
+    append_line_to_file (LOG_PATH + '/IP_changes.log', str(startTime) +'\t'+ 'DOWN' +'\n')
 
-    # Return error if not IP
-    if IP is None :
-        return ""
+    # Save event
+    sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+                        eve_EventType, eve_AdditionalInfo,
+                        eve_PendingAlertEmail)
+                    VALUES ('Internet', ?, ?, 'Device Down',
+                        'Previous Internet IP: '|| ?, 1) """,
+                    ('0.0.0.0', startTime, get_previous_internet_IP() ) )
 
-    # Return IP
-    return IP.group(0)
+    # Save new IP
+    sql.execute ("""UPDATE Devices SET dev_LastIP = ?
+                    WHERE dev_MAC = 'Internet' """,
+                    ('0.0.0.0',) )
+
+    # commit changes
+    sql_connection.commit()
+    
+
+#-------------------------------------------------------------------------------
+def update_internet_device ():
+    # Update Last Connection
+    sql.execute ("""UPDATE Devices SET dev_LastConnection = ?,
+                        dev_PresentLastScan = 1
+                    WHERE dev_MAC = 'Internet' """,
+                    (startTime,) )
+
+    # commit changes
+    sql_connection.commit()
+
+
+#-------------------------------------------------------------------------------
+def check_IP_format (ip):
+    try:
+        address = ipaddress.IPv4Address(ip)
+    except ValueError:
+        return "" # not a valid IP address
+    if not address.is_global:
+        return "" # is not a public IP address
+    else:
+        return address.exploded
 
 
 #===============================================================================
@@ -343,6 +394,10 @@ def update_devices_MAC_vendors (pArg = ''):
 
     # Close DB
     closeDB()
+
+    # OK
+    return 0
+
 
 #-------------------------------------------------------------------------------
 def query_MAC_vendor (pMAC):
@@ -1450,14 +1505,17 @@ def email_reporting ():
                     ORDER BY eve_DateTime""")
 
     for eventAlert in sql :
+        devName = eventAlert['dev_Name']
+        if REPORT_APPEND_GROUP_TO_NAME:
+            devName = devName+" ("+eventAlert['dev_Group']+")"
         mail_section_devices_down = True
         mail_text_devices_down += text_line_template.format (
             eventAlert['eve_MAC'], eventAlert['eve_DateTime'],
-            eventAlert['eve_IP'], eventAlert['dev_Name'])
+            eventAlert['eve_IP'], devName)
         mail_html_devices_down += html_line_template.format (
             REPORT_DEVICE_URL, eventAlert['eve_MAC'], eventAlert['eve_MAC'],
             eventAlert['eve_DateTime'], eventAlert['eve_IP'],
-            eventAlert['dev_Name'])
+            devName)
 
     format_report_section (mail_section_devices_down, 'SECTION_DEVICES_DOWN', 'TABLE_DEVICES_DOWN', mail_text_devices_down, mail_html_devices_down)
 
@@ -1478,15 +1536,18 @@ def email_reporting ():
                     ORDER BY eve_DateTime""")
 
     for eventAlert in sql :
+        devName = eventAlert['dev_Name']
+        if REPORT_APPEND_GROUP_TO_NAME:
+            devName = devName+" ("+eventAlert['dev_Group']+")"
         mail_section_events = True
         mail_text_events += text_line_template.format (
             eventAlert['eve_MAC'], eventAlert['eve_DateTime'],
             eventAlert['eve_IP'], eventAlert['eve_EventType'],
-            eventAlert['dev_Name'], eventAlert['eve_AdditionalInfo'])
+            devName, eventAlert['eve_AdditionalInfo'])
         mail_html_events += html_line_template.format (
             REPORT_DEVICE_URL, eventAlert['eve_MAC'], eventAlert['eve_MAC'],
             eventAlert['eve_DateTime'], eventAlert['eve_IP'],
-            eventAlert['eve_EventType'], eventAlert['dev_Name'],
+            eventAlert['eve_EventType'], devName,
             eventAlert['eve_AdditionalInfo'])
 
     format_report_section (mail_section_events, 'SECTION_EVENTS', 'TABLE_EVENTS', mail_text_events, mail_html_events)
