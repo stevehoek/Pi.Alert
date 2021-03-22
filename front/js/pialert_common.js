@@ -133,8 +133,13 @@ function refreshDevices (cycle) {
       $("#notification").fadeOut(500);
       if (data != "") {
         console.log(data);
-        window.location.href = window.location.href;
+        msg = "<pre>"+data+"</pre>"
+        showModal ('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
       }
     } );
   } );
+}
+
+function refreshPage () {
+  window.location.href = window.location.href;
 }

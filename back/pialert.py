@@ -585,6 +585,8 @@ def execute_arpscan (pRetries):
     for device in devices_list :
         if device['mac'] not in unique_mac: 
             unique_mac.append(device['mac'])
+            device['staticIP'] = False
+            device['deviceType'] = ''
             device['randomMAC'] = False
             device['comments'] = ''
             unique_devices.append(device)
@@ -640,9 +642,11 @@ def query_unifi_api (p_cycle_interval):
                 else:
                     ip = client['ip']
                     mac = client['mac'].upper()
+                    staticIP = False
 
                     if ('use_fixedip' in client and client['use_fixedip']):
                         ip = client['fixed_ip']
+                        staticIP = True
 
                     try:
                         address = ipaddress.IPv4Address(ip)
@@ -661,6 +665,8 @@ def query_unifi_api (p_cycle_interval):
                         ('ip', ip),
                         ('mac', mac),
                         ('hw', client['oui']),
+                        ('staticIP', staticIP),
+                        ('deviceType', ''),
                         ('randomMAC', randomMAC),
                         ('comments', comments)
                     ])
@@ -668,14 +674,33 @@ def query_unifi_api (p_cycle_interval):
 
     # Create Userdict of devices
     for device in devices_json:
-        #special case for the udm itself where its ip is the WAN ip instead of its local ip
+        ip = device['ip']
+
+        deviceType = ''
         if device['type'] == 'udm':
-            device['ip'] = UNIFI_HOST
+            #special case for the udm itself where its ip is the WAN ip instead of its local ip
+            ip = UNIFI_HOST
+            deviceType = 'Router'
+        elif device['type'] == 'usg':
+            deviceType = 'Router'
+        elif device['type'] == 'usw':
+            deviceType = 'Switch'
+        elif device['type'] == 'uap':
+            deviceType = 'AP'
+
         if device['state'] == 1:
+            staticIP = False
+            network = device['config_network']
+            if (network['type'] == 'static'):
+                staticIP = True
+                ip = network['ip']
+
             scan = dict([
-                ('ip', device['ip']),
+                ('ip', ip),
                 ('mac', device['mac']),
                 ('hw', 'Ubiquiti Networks Inc.'),
+                ('staticIP', staticIP),
+                ('deviceType', deviceType),
                 ('randomMAC', False),
                 ('comments', '')
             ])
@@ -757,8 +782,8 @@ def save_scanned_devices (p_arpscan_devices, p_cycle_interval):
 
     # Insert new arp-scan devices
     sql.executemany ("INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, "+
-                     "    cur_IP, cur_Vendor, cur_ScanMethod, cur_RandomMAC, cur_Comments) "+
-                     "VALUES ("+ cycle + ", :mac, :ip, :hw, 'arp-scan', :randomMAC, :comments)",
+                     "    cur_IP, cur_Vendor, cur_ScanMethod, cur_StaticIP, cur_DeviceType, cur_RandomMAC, cur_Comments) "+
+                     "VALUES ("+ cycle + ", :mac, :ip, :hw, 'arp-scan', :staticIP, :deviceType, :randomMAC, :comments)",
                      p_arpscan_devices) 
 
     # Insert Pi-hole devices
@@ -853,11 +878,19 @@ def print_scan_stats ():
     print ('        Disconnections.....: ' + str ( sql.fetchone()[0]) )
 
     # IP Changes
-    sql.execute ("""SELECT COUNT(*) FROM Devices, CurrentScan
-                    WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
-                      AND dev_ScanCycle = ?
-                      AND dev_LastIP <> cur_IP """,
-                    (cycle,))
+    if REPORT_ONLY_STATIC_IP_CHANGES:
+        sql.execute ("""SELECT COUNT(*) FROM Devices, CurrentScan
+                        WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
+                        AND dev_ScanCycle = ?
+                        AND dev_LastIP <> cur_IP 
+                        AND dev_StaticIP = 1 """,
+                        (cycle,))
+    else:
+        sql.execute ("""SELECT COUNT(*) FROM Devices, CurrentScan
+                        WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
+                        AND dev_ScanCycle = ?
+                        AND dev_LastIP <> cur_IP """,
+                        (cycle,))
     print ('        IP Changes.........: ' + str ( sql.fetchone()[0]) )
 
 #-------------------------------------------------------------------------------
@@ -879,9 +912,9 @@ def create_new_devices ():
     sql.execute ("""INSERT INTO Devices (dev_MAC, dev_name, dev_Vendor,
                         dev_LastIP, dev_FirstConnection, dev_LastConnection,
                         dev_ScanCycle, dev_AlertEvents, dev_AlertDeviceDown,
-                        dev_PresentLastScan, dev_NewDevice, dev_RandomMAC, dev_Comments)
+                        dev_PresentLastScan, dev_NewDevice, dev_StaticIP, dev_DeviceType, dev_RandomMAC, dev_Comments)
                     SELECT cur_MAC, '(unknown)', cur_Vendor, cur_IP, ?, ?,
-                        ?, ?, ?, 1, 1, cur_RandomMAC, cur_Comments
+                        ?, ?, ?, 1, 1, cur_StaticIP, cur_DeviceType, cur_RandomMAC, cur_Comments
                     FROM CurrentScan
                     WHERE cur_ScanCycle = ? 
                       AND NOT EXISTS (SELECT 1 FROM Devices
@@ -1011,16 +1044,30 @@ def insert_events ():
 
     # Check IP Changed
     print_log ('Events 4 - IP Changes')
-    sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
-                        eve_EventType, eve_AdditionalInfo,
-                        eve_PendingAlertEmail)
-                    SELECT cur_MAC, cur_IP, ?, 'IP Changed',
-                        'Previous IP: '|| dev_LastIP, dev_AlertEvents
-                    FROM Devices, CurrentScan
-                    WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
-                      AND dev_ScanCycle = ?
-                      AND dev_LastIP <> cur_IP """,
-                    (startTime, cycle) )
+    if REPORT_ONLY_STATIC_IP_CHANGES:
+        sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+                            eve_EventType, eve_AdditionalInfo,
+                            eve_PendingAlertEmail)
+                        SELECT cur_MAC, cur_IP, ?, 'IP Changed',
+                            'Previous IP: '|| dev_LastIP, dev_AlertEvents
+                        FROM Devices, CurrentScan
+                        WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
+                        AND dev_ScanCycle = ?
+                        AND dev_LastIP <> cur_IP
+                        AND dev_StaticIP = 1 """,
+                        (startTime, cycle) )
+    else:
+        sql.execute ("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+                            eve_EventType, eve_AdditionalInfo,
+                            eve_PendingAlertEmail)
+                        SELECT cur_MAC, cur_IP, ?, 'IP Changed',
+                            'Previous IP: '|| dev_LastIP, dev_AlertEvents
+                        FROM Devices, CurrentScan
+                        WHERE dev_MAC = cur_MAC AND dev_ScanCycle = cur_ScanCycle
+                        AND dev_ScanCycle = ?
+                        AND dev_LastIP <> cur_IP """,
+                        (startTime, cycle) )
+
     print_log ('Events end')
 
 #-------------------------------------------------------------------------------
@@ -1506,7 +1553,7 @@ def email_reporting ():
 
     for eventAlert in sql :
         devName = eventAlert['dev_Name']
-        if REPORT_APPEND_GROUP_TO_NAME:
+        if REPORT_APPEND_GROUP_TO_NAME and not (eventAlert['dev_Group'] is None):
             devName = devName+" ("+eventAlert['dev_Group']+")"
         mail_section_devices_down = True
         mail_text_devices_down += text_line_template.format (
@@ -1537,7 +1584,7 @@ def email_reporting ():
 
     for eventAlert in sql :
         devName = eventAlert['dev_Name']
-        if REPORT_APPEND_GROUP_TO_NAME:
+        if REPORT_APPEND_GROUP_TO_NAME and not (eventAlert['dev_Group'] is None):
             devName = devName+" ("+eventAlert['dev_Group']+")"
         mail_section_events = True
         mail_text_events += text_line_template.format (
@@ -1689,6 +1736,16 @@ def openDB ():
 #-------------------------------------------------------------------------------
 def updateDB ():
     sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('CurrentScan') 
+                    WHERE name='cur_StaticIP' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute ("""ALTER TABLE CurrentScan ADD COLUMN cur_StaticIP BOOLEAN NOT NULL DEFAULT (0) CHECK (cur_StaticIP IN (0, 1) )""")
+
+    sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('CurrentScan') 
+                    WHERE name='cur_DeviceType' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute ("""ALTER TABLE CurrentScan ADD COLUMN cur_DeviceType STRING (30)""")
+
+    sql.execute ("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('CurrentScan') 
                     WHERE name='cur_RandomMAC' COLLATE NOCASE""")
     if (sql.fetchone()[0] == 0):
         sql.execute ("""ALTER TABLE CurrentScan ADD COLUMN cur_RandomMAC BOOLEAN NOT NULL DEFAULT (0) CHECK (cur_RandomMAC IN (0, 1) )""")
@@ -1702,6 +1759,7 @@ def updateDB ():
                     WHERE name='dev_RandomMAC' COLLATE NOCASE""")
     if (sql.fetchone()[0] == 0):
         sql.execute ("""ALTER TABLE Devices ADD COLUMN dev_RandomMAC BOOLEAN NOT NULL DEFAULT (0) CHECK (dev_RandomMAC IN (0, 1) )""")
+
 
 
 #-------------------------------------------------------------------------------
