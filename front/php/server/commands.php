@@ -24,8 +24,9 @@
   if (isset ($_REQUEST['action']) && !empty ($_REQUEST['action'])) {
     $action = $_REQUEST['action'];
     switch ($action) {
-      case 'refreshDevices':  refreshDevices($_REQUEST['cycle']);  break;
-      default:     logServerConsole ('Action: '. $action);  break;
+      case 'refreshDevices':    refreshDevices($_REQUEST['cycle']);     break;
+      case 'showLatestReport':  showLatestReport($_REQUEST['cycle']);   break;
+      default:                  logServerConsole ('Action: '. $action); break;
     }
   }
 
@@ -37,5 +38,16 @@ function refreshDevices ($cycle) {
   $data = shell_exec("sudo -u pi python ../../../back/pialert.py ".$cycle);
   echo $data;
 }
+
+//------------------------------------------------------------------------------
+//  Show Latest Report
+//------------------------------------------------------------------------------
+function showLatestReport ($cycle) {
+  $filename = "../../../log/pialert.".$cycle.".log";
+  $file = fopen($filename, "r");
+  echo fread($file,filesize($filename));
+  fclose($file);
+}
+
 
 ?>

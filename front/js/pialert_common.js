@@ -143,3 +143,22 @@ function refreshDevices (cycle) {
 function refreshPage () {
   window.location.href = window.location.href;
 }
+
+
+// -----------------------------------------------------------------------------
+function showLatestReport (cycle) {
+  // show temporal notification
+  $("#alert-message").html("Fetching latest Report...");
+  $("#notification").fadeIn(1, function() {
+    // send command to server
+    $.get('php/server/commands.php?action=showLatestReport&cycle=' + cycle,
+    function(data) {
+      $("#notification").fadeOut(500);
+      if (data != "") {
+        console.log(data);
+        msg = "<pre>"+data+"</pre>"
+        showModal ('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
+      }
+    } );
+  } );
+}

@@ -95,6 +95,9 @@
           <!-- Refresh -->
           <li><a href="javascript:refreshDevices(15);"><i class="fa fa-retweet"></i><span> Refresh</span></a></li>
 
+          <!-- Refresh -->
+          <li><a href="javascript:showLatestReport(15);"><i class="fa fa-inbox"></i><span></span></a></li>
+
           <!-- Header right info -->
           <li class="dropdown user user-menu">
             <!-- Menu Toggle Button -->
