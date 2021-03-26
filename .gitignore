@@ -1,6 +1,7 @@
 .gitignore
 .vscode/settings.json
 .vscode/launch.json
+.vscode/.ropeproject/config.py
 Pi.Alert.code-workspace
 back/clients.json
 back/devices.json
