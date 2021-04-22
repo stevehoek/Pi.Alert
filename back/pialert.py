@@ -52,12 +52,8 @@ PIALERT_VERSION_FILE    = "/config/version.conf"
 if (not __debug__):
     PIALERT_CONFIG_FILE = "/config/pialert.debug.conf"
     
-if (sys.version_info > (3,0)):
-    exec(open(PIALERT_PATH + PIALERT_VERSION_FILE).read())
-    exec(open(PIALERT_PATH + PIALERT_CONFIG_FILE).read())
-else:
-    execfile(PIALERT_PATH + PIALERT_VERSION_FILE)
-    execfile(PIALERT_PATH + PIALERT_CONFIG_FILE)
+exec(open(PIALERT_PATH + PIALERT_VERSION_FILE).read())
+exec(open(PIALERT_PATH + PIALERT_CONFIG_FILE).read())
 
 
 #===============================================================================
@@ -196,48 +192,63 @@ def CheckInternetIP():
 
 #-------------------------------------------------------------------------------
 def GetInternetIP():
-    # BUGFIX #46 - curl http://ipv4.icanhazip.com repeatedly is very slow
-    # Using 'dig'
-    args = ['dig', '+short', '-4', 'myip.opendns.com', '@resolver1.opendns.com']
-    output = subprocess.check_output(args, universal_newlines=True)
-    output = output.replace('\n','')
+    try:
+        # BUGFIX #46 - curl http://ipv4.icanhazip.com repeatedly is very slow
+        # Using 'dig'
+        args = ['dig', '+short', '-4', 'myip.opendns.com', '@resolver1.opendns.com']
+        output = subprocess.check_output(args, universal_newlines=True)
+        output = output.replace('\n','')
 
-    ## BUGFIX #12 - Query IPv4 address (not IPv6)
-    ## Using 'curl' instead of 'dig'
-    ## args = ['curl', '-s', 'https://diagnostic.opendns.com/myip']
-    #args = ['curl', '-s', QUERY_MYIP_SERVER]
-    #output = subprocess.check_output(args, universal_newlines=True)
+        ## BUGFIX #12 - Query IPv4 address (not IPv6)
+        ## Using 'curl' instead of 'dig'
+        ## args = ['curl', '-s', 'https://diagnostic.opendns.com/myip']
+        #args = ['curl', '-s', QUERY_MYIP_SERVER]
+        #output = subprocess.check_output(args, universal_newlines=True)
 
-    # Check result is an IP
-    ip = CheckIPFormat(output)
-    return ip
+        # Check result is an IP
+        ip = CheckIPFormat(output)
+        return ip
+
+    # not Found
+    except subprocess.CalledProcessError:
+        return ""
 
 
 #-------------------------------------------------------------------------------
 def GetDynamicDNSIP():
-    # Using OpenDNS server
-        # args = ['dig', '+short', DDNS_DOMAIN, '@resolver1.opendns.com']
+    try:
+        # Using OpenDNS server
+            # args = ['dig', '+short', DDNS_DOMAIN, '@resolver1.opendns.com']
 
-    # Using default DNS server
-    args = ['dig', '+short', DDNS_DOMAIN]
-    output = subprocess.check_output(args, universal_newlines=True)
+        # Using default DNS server
+        args = ['dig', '+short', DDNS_DOMAIN]
+        output = subprocess.check_output(args, universal_newlines=True)
 
-    # Check result is an IP
-    ip = CheckIPFormat(output)
-    return ip
+        # Check result is an IP
+        ip = CheckIPFormat(output)
+        return ip
+
+    # not Found
+    except subprocess.CalledProcessError:
+        return ""
 
 
 #-------------------------------------------------------------------------------
 def SetDynamicDNSIP():
-    # Update Dynamic IP
-    output = subprocess.check_output(['curl', '-s',
-        DDNS_UPDATE_URL +
-        'username='  + DDNS_USER +
-        '&password=' + DDNS_PASSWORD +
-        '&hostname=' + DDNS_DOMAIN],
-        universal_newlines=True)
-    
-    return output
+    try:
+        # Update Dynamic IP
+        output = subprocess.check_output(['curl', '-s',
+            DDNS_UPDATE_URL +
+            'username='  + DDNS_USER +
+            '&password=' + DDNS_PASSWORD +
+            '&hostname=' + DDNS_DOMAIN],
+            universal_newlines=True)
+        
+        return output
+
+    # not Found
+    except subprocess.CalledProcessError:
+        return ""
 
 
 #-------------------------------------------------------------------------------
@@ -325,7 +336,8 @@ def LogInternetDownEvent():
                     ('0.0.0.0', startTime, GetPreviousInternetIP() ) )
 
     # Save new IP
-    sql.execute("""UPDATE Devices SET dev_LastIP = ?
+    sql.execute("""UPDATE Devices SET dev_LastIP = ?,
+                        dev_PresentLastScan = 0
                     WHERE dev_MAC = 'Internet' """,
                     ('0.0.0.0',) )
 
@@ -1705,27 +1717,17 @@ def RemoveTag(pText, pTag):
 #-------------------------------------------------------------------------------
 def WriteFile(pPath, pText):
     # Write the text depending using the correct python version
-    if (sys.version_info < (3, 0)):
-        file = io.open(pPath , mode='w', encoding='utf-8')
-        file.write( pText.decode('unicode_escape') ) 
-        file.close() 
-    else:
-        file = open(pPath, 'w', encoding='utf-8') 
-        file.write(pText) 
-        file.close() 
+    file = open(pPath, 'w', encoding='utf-8') 
+    file.write(pText) 
+    file.close() 
 
 
 #-------------------------------------------------------------------------------
 def AppendLineToFile(pPath, pText):
     # append the line depending using the correct python version
-    if (sys.version_info < (3, 0)):
-        file = io.open(pPath , mode='a', encoding='utf-8')
-        file.write( pText.decode('unicode_escape') ) 
-        file.close() 
-    else:
-        file = open(pPath, 'a', encoding='utf-8') 
-        file.write(pText) 
-        file.close() 
+    file = open(pPath, 'a', encoding='utf-8') 
+    file.write(pText) 
+    file.close() 
 
 
 #-------------------------------------------------------------------------------
