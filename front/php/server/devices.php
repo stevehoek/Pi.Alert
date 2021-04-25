@@ -331,36 +331,41 @@ function getDeviceTypes() {
   $sql = 'SELECT DISTINCT 9 as dev_Order, dev_DeviceType
           FROM Devices
           WHERE dev_DeviceType NOT IN ("",
-                 "Smartphone", "Tablet",
-                 "Laptop", "Mini PC", "PC", "Printer", "Server", "Singleboard Computer (SBC)",
-                 "Game Console", "SmartTV", "TV Decoder", "Virtual Assistance",
-                 "Clock", "House Appliance", "Phone", "Radio",
-                 "AP", "NAS", "PLC", "Router")
+                 "Smartphone", "Tablet", "Watch", "e-Reader",
+                 "Laptop", "PC", "Mini PC", "Server", "Raspberry Pi", "Printer",
+                 "Game Console", "SmartTV", "Media Streamer", "Speaker", "Home Automation", "Virtual Assistant",
+                 "Clock", "Phone", "Radio", "Thermostat", "Smart Appliance",
+                 "AP", "NAS", "Switch", "Router", "USB LAN Adapter", "USB WiFi Adapter",
+                 "Other")
 
           UNION SELECT 1 as dev_Order, "Smartphone"
           UNION SELECT 1 as dev_Order, "Tablet"
+          UNION SELECT 1 as dev_Order, "Watch"
+          UNION SELECT 1 as dev_Order, "e-Reader"
 
           UNION SELECT 2 as dev_Order, "Laptop"
-          UNION SELECT 2 as dev_Order, "Mini PC"
           UNION SELECT 2 as dev_Order, "PC"
-          UNION SELECT 2 as dev_Order, "Printer"
+          UNION SELECT 2 as dev_Order, "Mini PC"
           UNION SELECT 2 as dev_Order, "Server"
-          UNION SELECT 2 as dev_Order, "Singleboard Computer (SBC)"
+          UNION SELECT 2 as dev_Order, "Raspberry Pi"
+          UNION SELECT 2 as dev_Order, "Printer"
 
-          UNION SELECT 3 as dev_Order, "Home Automation"
           UNION SELECT 3 as dev_Order, "Game Console"
           UNION SELECT 3 as dev_Order, "SmartTV"
-          UNION SELECT 3 as dev_Order, "TV Decoder"
-          UNION SELECT 3 as dev_Order, "Virtual Assistance"
+          UNION SELECT 3 as dev_Order, "Media Streamer"
+          UNION SELECT 3 as dev_Order, "Speaker"
+          UNION SELECT 3 as dev_Order, "Home Automation"
+          UNION SELECT 3 as dev_Order, "Virtual Assistant"
 
           UNION SELECT 4 as dev_Order, "Clock"
-          UNION SELECT 4 as dev_Order, "House Appliance"
           UNION SELECT 4 as dev_Order, "Phone"
           UNION SELECT 4 as dev_Order, "Radio"
+          UNION SELECT 4 as dev_Order, "Thermostat"
+          UNION SELECT 4 as dev_Order, "Smart Appliance"
 
           UNION SELECT 5 as dev_Order, "AP"
           UNION SELECT 5 as dev_Order, "NAS"
-          UNION SELECT 5 as dev_Order, "PLC"
+          UNION SELECT 5 as dev_Order, "Switch"
           UNION SELECT 5 as dev_Order, "Router"
           UNION SELECT 5 as dev_Order, "USB LAN Adapter"
           UNION SELECT 5 as dev_Order, "USB WiFi Adapter"
