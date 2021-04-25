@@ -81,18 +81,20 @@ Linux distributions.
 - One-step Automated Update:
   #### `curl -sSL https://github.com/stevehoek/Pi.Alert/raw/main/install/pialert_update.sh | bash`
 
-
-## Device Management
+# Uninstall process
 <!--- --------------------------------------------------------------------- --->
+  - [Unistall process](docs/UNINSTALL.md)
 
+
+# Device Management
+<!--- --------------------------------------------------------------------- --->
   - [Device Management instructions](docs/DEVICE_MANAGEMENT.md)
-
 
 
 ## Other useful info
 <!--- --------------------------------------------------------------------- --->
 
-### [Versions History](docs/VERSIONS_HISTORY.md)
+### [Versions History](docs/VERSION_HISTORY.md)
 
 ### Powered by:
   | Product      | Objetive                               |
@@ -114,7 +116,7 @@ Linux distributions.
   [Read more here](LICENSE.txt)
 
 ### Contact
-  pi.alert.application@gmail.com
+  Please create an Issue on GitHub to contact the author.
   
   ***Suggestions and comments are welcome***
 
@@ -127,4 +129,3 @@ Linux distributions.
 [screen4]: ./docs/img/3_presence.jpg          "Screen 4"
 [report1]: ./docs/img/4_report_1.jpg          "Report sample 1"
 [report2]: ./docs/img/4_report_2.jpg          "Report sample 2"
-

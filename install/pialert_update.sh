@@ -35,6 +35,7 @@ main() {
   move_files
   clean_files
 
+  check_packages
   download_pialert
   update_config
   update_db
@@ -87,6 +88,21 @@ clean_files() {
 }
 
 # ------------------------------------------------------------------------------
+# Check packages
+# ------------------------------------------------------------------------------
+check_packages() {
+  print_msg "- Checking package apt-utils..."
+  sudo apt-get install apt-utils -y                               2>&1 >> "$LOG"
+
+  print_msg "- Checking package sqlite3..."
+  sudo apt-get install sqlite3 -y                                 2>&1 >> "$LOG"
+
+  print_msg "- Checking packages dnsutils & net-tools..."
+  sudo apt-get install dnsutils net-tools -y                      2>&1 >> "$LOG"
+}
+
+
+# ------------------------------------------------------------------------------
 # Download and uncompress Pi.Alert
 # ------------------------------------------------------------------------------
 download_pialert() {
@@ -96,7 +112,7 @@ download_pialert() {
   fi
   
   print_msg "- Downloading update file..."
-  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/stevehoek/Pi.Alert/raw/main/tar/pialert_latest.tar
+  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/pucherot/Pi.Alert/raw/main/tar/pialert_latest.tar
   echo ""
 
   print_msg "- Uncompressing tar file"
@@ -128,6 +144,10 @@ update_config() {
 
   if ! grep -Fq QUERY_MYIP_SERVER "$PIALERT_HOME/config/pialert.conf" ; then
     echo "QUERY_MYIP_SERVER = 'http://ipv4.icanhazip.com'" >> "$PIALERT_HOME/config/pialert.conf"
+  fi      
+
+  if ! grep -Fq SCAN_SUBNETS "$PIALERT_HOME/config/pialert.conf" ; then
+    echo "SCAN_SUBNETS      = '--localnet'" >> "$PIALERT_HOME/config/pialert.conf"
   fi      
 }
 
@@ -163,6 +183,16 @@ update_db() {
     print_msg "  - Adding column 'Location' to 'Devices'..."
     sqlite3 $PIALERT_HOME/db/pialert.db "ALTER TABLE Devices ADD COLUMN dev_Location STRING(250) COLLATE NOCASE;"                                      2>&1 >> "$LOG"
   fi
+
+  COL=`sqlite3 $PIALERT_HOME/db/pialert.db "SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('Devices') WHERE name='dev_Archived' COLLATE NOCASE";`               2>&1 >> "$LOG"
+  if [ "$COL" == "0" ] ; then
+    print_msg "  - Adding column 'Archived / Hidden' to 'Devices'..."
+    sqlite3 $PIALERT_HOME/db/pialert.db "ALTER TABLE Devices ADD COLUMN dev_Archived BOOLEAN NOT NULL DEFAULT (0) CHECK (dev_Archived IN (0, 1) );"    2>&1 >> "$LOG"
+    sqlite3 $PIALERT_HOME/db/pialert.db "CREATE INDEX IDX_dev_Archived ON Devices (dev_Archived);"                                                     2>&1 >> "$LOG"
+  fi
+
+  print_msg "- Cheking Internet scancycle..."
+  sqlite3 $PIALERT_HOME/db/pialert.db "UPDATE Devices set dev_ScanCycle=1, dev_AlertEvents=1, dev_AlertDeviceDown=1 WHERE dev_MAC='Internet' AND dev_ScanCycle=0;"  2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------
@@ -273,3 +303,4 @@ process_error() {
 # ------------------------------------------------------------------------------
   main
   exit 0
+  

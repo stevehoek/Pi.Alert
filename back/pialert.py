@@ -258,6 +258,7 @@ def GetPreviousInternetIP():
     
     sqlRow = sql.fetchone()
     if (sqlRow is None):
+        previousIP = '0.0.0.0'
         sql.execute("""INSERT INTO Devices  
                         VALUES ('Internet', 
                         'Internet Connection', 
@@ -269,25 +270,26 @@ def GetPreviousInternetIP():
                         '', 
                         '2021-01-01 00:00:00',
                         '2021-01-01 00:00:00',
-                        '0.0.0.0', 
-                        0, 
+                        ?, 
                         0, 
                         1, 
-                        0, 
-                        0, 
+                        1, 
+                        1, 
+                        1, 
                         0, 
                         '2021-01-01 00:00:00.000000',
                         1,
                         0,
                         '',
-                        0)""" )
+                        0,
+                        0)""",
+                        (previousIP, ) )
         sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
                             eve_EventType, eve_AdditionalInfo,
                             eve_PendingAlertEmail)
                         VALUES ('Internet', ?, ?, 'New Device',
                             '', 1) """,
-                        ('0.0.0.0', startTime) )
-        previousIP = '0.0.0.0'
+                        (previousIP, startTime) )
     else:
         previousIP = sqlRow[0]
 
@@ -297,21 +299,19 @@ def GetPreviousInternetIP():
 
 #-------------------------------------------------------------------------------
 def SaveNewInternetIP(pNewIP):
+    if ((pNewIP is Null) or (pNewIP == '')):
+        pNewIP = '0.0.0.0'
+
     # Log new IP into logfile
     AppendLineToFile(LOG_PATH + '/IP_changes.log', str(startTime) +'\t'+ pNewIP +'\n')
-
-    prevIP = GetPreviousInternetIP()
-    eventType = 'Internet IP Changed'
-    if (prevIP == '0.0.0.0'):
-        eventType = 'Connected'
 
     # Save event
     sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
                         eve_EventType, eve_AdditionalInfo,
                         eve_PendingAlertEmail)
-                    VALUES ('Internet', ?, ?, ?,
+                    VALUES ('Internet', ?, ?, 'Internet IP Changed',
                         'Previous Internet IP: '|| ?, 1) """,
-                    (pNewIP, startTime, eventType, prevIP ) )
+                    (pNewIP, startTime, GetPreviousInternetIP() ) )
 
     # Save new IP
     sql.execute("""UPDATE Devices SET dev_LastIP = ?
@@ -324,16 +324,21 @@ def SaveNewInternetIP(pNewIP):
 
 #-------------------------------------------------------------------------------
 def LogInternetDownEvent():
+    sql.execute("SELECT dev_LastIP FROM Devices WHERE dev_MAC = 'Internet' ")
+    sqlRow = sql.fetchone()
+    if ((sqlRow is None) or (sqlrow[0] == '0.0.0.0')):
+        return
+
     # Log new IP into logfile
     AppendLineToFile(LOG_PATH + '/IP_changes.log', str(startTime) +'\t'+ 'DOWN' +'\n')
 
     # Save event
-    sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
-                        eve_EventType, eve_AdditionalInfo,
-                        eve_PendingAlertEmail)
-                    VALUES ('Internet', ?, ?, 'Device Down',
-                        'Previous Internet IP: '|| ?, 1) """,
-                    ('0.0.0.0', startTime, GetPreviousInternetIP() ) )
+    # sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
+    #                     eve_EventType, eve_AdditionalInfo,
+    #                     eve_PendingAlertEmail)
+    #                 VALUES ('Internet', ?, ?, 'Device Down',
+    #                     'Previous Internet IP: '|| ?, 1) """,
+    #                 ('0.0.0.0', startTime, GetPreviousInternetIP() ) )
 
     # Save new IP
     sql.execute("""UPDATE Devices SET dev_LastIP = ?,
@@ -367,6 +372,14 @@ def CheckIPFormat(ip):
         return "" # is not a public IP address
     else:
         return address.exploded
+
+
+#-------------------------------------------------------------------------------
+def CheckMACFormat(mac):
+    if re.match("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$", mac.lower()):
+        return mac
+    else:
+        return ""
 
 
 #===============================================================================
@@ -588,8 +601,12 @@ def QueryScanCycleData(pOpenCloseDB = False):
 
 #-------------------------------------------------------------------------------
 def ExecuteARPScan(pRetries):
-    # Prepara command arguments
-    args = ['sudo', 'arp-scan', '--localnet', '--ignoredups', '--retry=' + str(pRetries)]
+    # #101 - arp-scan subnet configuration
+    # Prepare command arguments
+    subnets = ARPSCAN_SUBNETS.strip().split()
+    args = ['sudo', 'arp-scan', '--ignoredups', '--retry=' + str(pRetries)] + subnets
+    # args = ['sudo', 'arp-scan', ARPSCAN_SUBNETS, '--ignoredups', '--retry=' + str(pRetries)]
+    # print (args)
 
     # TESTING - Fast Scan
         # args = ['sudo', 'arp-scan', '--localnet', '--ignoredups', '--retry=1']
@@ -836,6 +853,38 @@ def SaveScannedDevices(pScanDevices, pCycleInterval):
                      (int(startTime.strftime('%S')) - 60 * pCycleInterval),
                      cycle) )
 
+    # Check Internet connectivity
+    internetIP = GetInternetIP()
+        # TESTING - Force IP
+        # internetIP = ""
+    if internetIP != "":
+        sql.execute ("""INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, cur_IP, cur_Vendor, cur_ScanMethod)
+                        VALUES (?, 'Internet', ?, Null, 'queryDNS') """, (cycle, internetIP) )
+
+    if ARPSCAN_ACTIVE:
+        # #76 Add Local MAC of default local interface
+        # BUGFIX #106 - Device that pialert is running
+        # local_mac_cmd = ["bash -lc ifconfig `ip route list default | awk {'print $5'}` | grep ether | awk '{print $2}'"]
+        # local_mac_cmd = ["/sbin/ifconfig `ip route list default | sort -nk11 | head -1 | awk {'print $5'}` | grep ether | awk '{print $2}'"]
+        local_mac_cmd = ["/sbin/ifconfig `ip -o route get 1 | sed 's/^.*dev \\([^ ]*\\).*$/\\1/;q'` | grep ether | awk '{print $2}'"]
+        local_mac = subprocess.Popen(local_mac_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0].decode().strip()
+        local_mac = CheckMACFormat(local_mac)
+
+        # local_dev_cmd = ["ip -o route get 1 | sed 's/^.*dev \\([^ ]*\\).*$/\\1/;q'"]
+        # local_dev = subprocess.Popen(local_dev_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0].decode().strip()
+
+        # local_ip_cmd = ["ip route list default | awk {'print $7'}"]
+        local_ip_cmd = ["ip -o route get 1 | sed 's/^.*src \\([^ ]*\\).*$/\\1/;q'"]
+        local_ip = subprocess.Popen(local_ip_cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT).communicate()[0].decode().strip()
+        
+        local_ip = CheckIPFormat(local_ip)
+        if ((local_mac != "") and (local_ip != "")):
+            # Check if local mac has been detected with other methods
+            sql.execute ("SELECT COUNT(*) FROM CurrentScan WHERE cur_ScanCycle = ? AND cur_MAC = ? ", (cycle, local_mac) )
+            if (sql.fetchone()[0] == 0):
+                sql.execute("INSERT INTO CurrentScan (cur_ScanCycle, cur_MAC, cur_IP, cur_Vendor, cur_ScanMethod) " +
+                            "VALUES ( ?, ?, ?, Null, 'local_MAC') ", (cycle, local_mac, local_ip))
+
 
 #-------------------------------------------------------------------------------
 def PrintScanStats():
@@ -961,7 +1010,7 @@ def CreateNewDevices():
                     (startTime, startTime, DEFAULT_SCAN_CYCLE, DEFAULT_ALERT_EVENTS, DEFAULT_ALERT_DOWN, cycle) ) 
 
     # Pi-hole - Insert events for new devices
-    # NOT STRICYLY NECESARY (Devices can be created through Current_Scan)
+    # NOT STRICTLY NECCESSARY (Devices can be created through Current_Scan)
     # Bugfix #2 - Pi-hole devices w/o IP
     PrintLog('New devices - 3 Pi-hole Events')
     sql.execute("""INSERT INTO Events (eve_MAC, eve_IP, eve_DateTime,
@@ -1209,7 +1258,8 @@ def UpdateDevicesNames():
 
     # Devices without name
     print('        Trying to resolve devices without name...', end='')
-    for device in sql.execute("SELECT * FROM Devices WHERE dev_Name IN ('(unknown)','') "):
+    # BUGFIX #97 - Updating name of Devices w/o IP
+    for device in sql.execute ("SELECT * FROM Devices WHERE dev_Name IN ('(unknown)','') AND dev_LastIP <> '-'"):
         # Resolve device name
         newName = ResolveDeviceName(device['dev_MAC'], device['dev_LastIP'])
        
@@ -1246,11 +1296,14 @@ def ResolveDeviceName(pMAC, pIP):
         if (len(strMAC) != 17 or len(mac) != 12):
             return -2
 
+        # DEBUG
+        # print (pMAC, pIP)
+
         # Resolve name with DIG
         args = ['dig', '+short', '-x', pIP]
         output = subprocess.check_output(args, universal_newlines=True)
 
-        # Check if Eliminate local domain
+        # Check returns
         newName = output.strip()
         if (len(newName) == 0):
             return -2
@@ -1278,7 +1331,8 @@ def VoidGhostDisconnections():
     PrintLog('Void - 1 Connect ghost events')
     sql.execute("""UPDATE Events SET eve_PairEventRowid = Null,
                         eve_EventType ='VOIDED - ' || eve_EventType
-                    WHERE eve_EventType = 'Connected'
+                    WHERE eve_MAC != 'Internet'
+                      AND eve_EventType = 'Connected'
                       AND eve_DateTime = ?
                       AND eve_MAC IN (
                           SELECT Events.eve_MAC
@@ -1297,7 +1351,8 @@ def VoidGhostDisconnections():
     # Void connect paired events
     PrintLog('Void - 2 Paired events')
     sql.execute("""UPDATE Events SET eve_PairEventRowid = Null 
-                    WHERE eve_PairEventRowid IN (
+                    WHERE eve_MAC != 'Internet'
+                      AND eve_PairEventRowid IN (
                           SELECT Events.RowID
                           FROM CurrentScan, Devices, ScanCycles, Events 
                           WHERE cur_ScanCycle = ?
@@ -1315,7 +1370,8 @@ def VoidGhostDisconnections():
     PrintLog('Void - 3 Disconnect ghost events')
     sql.execute("""UPDATE Events SET eve_PairEventRowid = Null, 
                         eve_EventType = 'VOIDED - '|| eve_EventType
-                    WHERE ROWID IN (
+                    WHERE eve_MAC != 'Internet'
+                      AND ROWID IN (
                           SELECT Events.RowID
                           FROM CurrentScan, Devices, ScanCycles, Events 
                           WHERE cur_ScanCycle = ?
@@ -1501,12 +1557,18 @@ def EmailReporting():
     OpenDB()
 
     # Open text Template
-    templateFile = open(PIALERT_BACK_PATH + '/report_template.txt', 'r') 
+    if (not __debug__):
+        templateFile = open(PIALERT_BACK_PATH + '/report_template.debug.txt', 'r') 
+    else:
+        templateFile = open(PIALERT_BACK_PATH + '/report_template.txt', 'r') 
     mailText = templateFile.read() 
     templateFile.close() 
 
     # Open html Template
-    templateFile = open(PIALERT_BACK_PATH + '/report_template.html', 'r') 
+    if (not __debug__):
+        templateFile = open(PIALERT_BACK_PATH + '/report_template.debug.html', 'r') 
+    else:
+        templateFile = open(PIALERT_BACK_PATH + '/report_template.html', 'r') 
     mailHTML = templateFile.read() 
     templateFile.close() 
 
@@ -1646,8 +1708,11 @@ def EmailReporting():
 
     FormatReportSection(mailSectionEvents, 'SECTION_EVENTS', 'TABLE_EVENTS', mailTextEvents, mailHTMLEvents)
 
-    # DEBUG - Write output emails for testing
-    if (True):
+    # Write output emails
+    if (not __debug__):
+        WriteFile(LOG_PATH + '/report_output.debug.txt', mailText) 
+        WriteFile(LOG_PATH + '/report_output.debug.html', mailHTML) 
+    else:
         WriteFile(LOG_PATH + '/report_output.txt', mailText) 
         WriteFile(LOG_PATH + '/report_output.html', mailHTML) 
 
@@ -1804,6 +1869,12 @@ def UpdateDB():
                     WHERE name='dev_RandomMAC' COLLATE NOCASE""")
     if (sql.fetchone()[0] == 0):
         sql.execute("""ALTER TABLE Devices ADD COLUMN dev_RandomMAC BOOLEAN NOT NULL DEFAULT (0) CHECK (dev_RandomMAC IN (0, 1) )""")
+
+    sql.execute("""SELECT COUNT(*) FROM PRAGMA_TABLE_INFO ('Devices') 
+                    WHERE name='dev_Archived' COLLATE NOCASE""")
+    if (sql.fetchone()[0] == 0):
+        sql.execute("""ALTER TABLE Devices ADD COLUMN dev_Archived BOOLEAN NOT NULL DEFAULT (0) CHECK (dev_Archived IN (0, 1) )""")
+        sql.execute("""CREATE INDEX IDX_dev_Archived ON Devices (dev_Archived)""")
 
 
 #-------------------------------------------------------------------------------

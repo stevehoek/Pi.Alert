@@ -23,7 +23,8 @@
   
   LOG="pialert_install_`date +"%Y-%m-%d_%H-%M"`.log"
   
-  MAIN_IP=`ip -o route get 1 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
+  # MAIN_IP=`ip -o route get 1 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'`
+  MAIN_IP=`ip -o route get 1 | sed 's/^.*src \([^ ]*\).*$/\1/;q'`
   
   PIHOLE_INSTALL=false
   PIHOLE_ACTIVE=false
@@ -38,6 +39,8 @@
   
   USE_PYTHON_VERSION=0
   PYTHON_BIN=python
+
+  FIRST_SCAN_KNOWN=true
   
   REPORT_MAIL=False
   REPORT_TO=user@gmail.com
@@ -104,7 +107,7 @@ ask_config() {
   PIHOLE_INSTALL=false
   if $PIHOLE_ACTIVE ; then
     msgbox "Pi-hole is already installed in this system." \
-           "Perfect: Pi-hole Installation not necessary"
+           "Perfect: Pi-hole Installation is not necessary"
   else
     ask_yesno "Pi-hole is not installed." \
               "Do you want to install Pi-hole before installing Pi.Alert ?" "YES"
@@ -166,6 +169,11 @@ ask_config() {
   else
     USE_PYTHON_VERSION=$ANSWER
   fi
+
+  # Ask first scan options
+  ask_yesno "First Scan options" \
+            "Do you want to mark the new devices as known devices during the first scan?" "YES"
+  FIRST_SCAN_KNOWN=$ANSWER
 
   # Ask e-mail notification config
   MAIL_REPORT=false
@@ -304,6 +312,9 @@ add_pialert_DNS() {
 install_lighttpd() {
   print_header "Lighttpd & PHP"
 
+  print_msg "- Installing apt-utils..."
+  sudo apt-get install apt-utils -y                               2>&1 >> "$LOG"
+
   print_msg "- Installing lighttpd..."
   sudo apt-get install lighttpd -y                                2>&1 >> "$LOG"
   
@@ -312,14 +323,18 @@ install_lighttpd() {
 
   print_msg "- Activating PHP..."
   ERRNO=0
-  sudo lighttpd-enable-mod fastcgi-php 2>&1                 >>"$LOG" || ERRNO=$? 
+  sudo lighttpd-enable-mod fastcgi-php 2>&1                            >>"$LOG" || ERRNO=$? 
   log_no_screen "-- Command error code: $ERRNO"
   if [ "$ERRNO" = "1" ] ; then
     process_error "Error activating PHP"
   fi
   
   print_msg "- Restarting lighttpd..."
-  sudo /etc/init.d/lighttpd restart                               2>&1 >> "$LOG"
+  sudo service lighttpd restart                                   2>&1 >> "$LOG"
+  # sudo /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
+
+  print_msg "- Installing sqlite3..."
+  sudo apt-get install sqlite3 -y                                 2>&1 >> "$LOG"
 }
 
 
@@ -335,8 +350,8 @@ install_arpscan() {
   print_msg "- Testing arp-scan..."
   sudo arp-scan -l | head -n -3 | tail +3                        | tee -a "$LOG"
 
-  print_msg "- Installing dnsutils..."
-  sudo apt-get install dnsutils -y                                2>&1 >> "$LOG"
+  print_msg "- Installing dnsutils & net-tools..."
+  sudo apt-get install dnsutils net-tools -y                      2>&1 >> "$LOG"
 }
   
 
@@ -377,7 +392,7 @@ install_python() {
       print_msg "- Using Python 3"
     else
       print_msg "- Installing Python 3..."
-      sudo apt-get install python -y                              2>&1 >> "$LOG"
+      sudo apt-get install python3 -y                             2>&1 >> "$LOG"
     fi
     PYTHON_BIN="python3"
   else
@@ -439,7 +454,7 @@ download_pialert() {
   fi
   
   print_msg "- Downloading installation tar file..."
-  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/stevehoek/Pi.Alert/raw/main/tar/pialert_latest.tar
+  curl -Lo "$INSTALL_DIR/pialert_latest.tar" https://github.com/pucherot/Pi.Alert/raw/main/tar/pialert_latest.tar
   echo ""
 
   print_msg "- Uncompressing tar file"
@@ -499,16 +514,22 @@ set_pialert_parameter() {
 test_pialert() {
   print_msg "- Testing Pi.Alert HW vendors database update process..."
   print_msg "*** PLEASE WAIT A COUPLE OF MINUTES..."
-  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py update_vendors_silent  2>&1 | tee -ai "$LOG"
+  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py update_vendors_silent            2>&1 | tee -ai "$LOG"
 
   echo ""
   print_msg "- Testing Pi.Alert Internet IP Lookup..."
-  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py internet_IP            2>&1 | tee -ai "$LOG"
+  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py internet_IP                      2>&1 | tee -ai "$LOG"
 
   echo ""
   print_msg "- Testing Pi.Alert Network scan..."
   print_msg "*** PLEASE WAIT A COUPLE OF MINUTES..."
-  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py 1                      2>&1 | tee -ai "$LOG"
+  stdbuf -i0 -o0 -e0  $PYTHON_BIN $PIALERT_HOME/back/pialert.py 1                                2>&1 | tee -ai "$LOG"
+
+  if $FIRST_SCAN_KNOWN ; then
+    echo ""
+    print_msg "- Set devices as Known devices..."
+    sqlite3 $PIALERT_HOME/db/pialert.db "UPDATE Devices SET dev_NewDevice=0, dev_AlertEvents=0 WHERE dev_NewDevice=1" 2>&1 >> "$LOG"
+  fi
 }
 
 # ------------------------------------------------------------------------------
@@ -560,7 +581,8 @@ publish_pialert() {
   sudo ln -s ../conf-available/pialert_front.conf  "$LIGHTTPD_CONF_DIR/conf-enabled/pialert_front.conf"  2>&1 >> "$LOG"
 
   print_msg "- Restarting lighttpd..."
-  sudo /etc/init.d/lighttpd restart                               2>&1 >> "$LOG"
+  sudo sudo service lighttpd restart                              2>&1 >> "$LOG"
+  # sudo /etc/init.d/lighttpd restart                             2>&1 >> "$LOG"
 }
 
 # ------------------------------------------------------------------------------

@@ -42,15 +42,10 @@
 
         <div class="col-lg-3 col-sm-6 col-xs-6">
           <a href="#" onclick="javascript: $('#tabDetails').trigger('click')">
-            <div class="small-box bg-aqua pa-small-box-aqua">
-
-              <div class="inner">
-                <h4>Current Status</h4>
-                <h3 id="deviceStatus" style="margin-left: 0em"> -- </h3>
-              </div>
-
+            <div class="small-box bg-aqua pa-small-box-aqua pa-small-box-2">
+              <div class="inner"> <h3 id="deviceStatus" style="margin-left: 0em"> -- </h3> </div>
               <div class="icon"> <i id="deviceStatusIcon" class=""></i> </div>
-              <div class="small-box-footer"> Details <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Current Status <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -58,15 +53,10 @@
 <!-- top small box 2 ------------------------------------------------------- -->
         <div class="col-lg-3 col-sm-6 col-xs-6">
           <a href="#" onclick="javascript: $('#tabSessions').trigger('click');">
-            <div class="small-box bg-green pa-small-box-green">
-
-              <div class="inner">
-                <h4>Sessions</h4>
-                <h3 id="deviceSessions"> -- </h3>
-              </div>
-
+            <div class="small-box bg-green pa-small-box-green pa-small-box-2">
+              <div class="inner"> <h3 id="deviceSessions"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-plug"></i> </div>
-              <div class="small-box-footer"> Details <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Sesions <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -74,15 +64,10 @@
 <!-- top small box 3 ------------------------------------------------------- -->
         <div class="col-lg-3 col-sm-6 col-xs-6">
           <a href="#" onclick="javascript: $('#tabPresence').trigger('click')">
-            <div  class="small-box bg-yellow pa-small-box-yellow">
-
-              <div class="inner">
-                <h4 id="deviceEventsTitle"> Presence </h4> 
-                <h3 id="deviceEvents" style="margin-left: 0em"> -- </h3>
-              </div>
-
+            <div  class="small-box bg-yellow pa-small-box-yellow pa-small-box-2">
+              <div class="inner"> <h3 id="deviceEvents" style="margin-left: 0em"> -- </h3> </div>
               <div id="deviceEventsIcon" class="icon"> <i class="fa fa-calendar"></i> </div>
-              <div class="small-box-footer"> Details <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Presence <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -90,15 +75,10 @@
 <!--  top small box 4 ------------------------------------------------------ -->
         <div class="col-lg-3 col-sm-6 col-xs-6">
           <a href="#" onclick="javascript: $('#tabEvents').trigger('click');">
-            <div  class="small-box bg-red pa-small-box-red">
-
-              <div class="inner">
-                <h4>Down Alerts</h4>
-                <h3 id="deviceDownAlerts"> -- </h3>
-              </div>
-
+            <div  class="small-box bg-red pa-small-box-red pa-small-box-2">
+              <div class="inner"> <h3 id="deviceDownAlerts"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-warning"></i> </div>
-              <div class="small-box-footer"> Details <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Down Alerts <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -111,13 +91,28 @@
         <div class="col-lg-12 col-sm-12 col-xs-12">
         <!-- <div class="box-transparent"> -->
 
+
           <div id="navDevice" class="nav-tabs-custom">
             <ul class="nav nav-tabs" style="fon t-size:16px;">
               <li> <a id="tabDetails"  href="#panDetails"  data-toggle="tab"> Details  </a></li>
               <li> <a id="tabSessions" href="#panSessions" data-toggle="tab"> Sessions </a></li>
               <li> <a id="tabPresence" href="#panPresence" data-toggle="tab"> Presence </a></li>
               <li> <a id="tabEvents"   href="#panEvents"   data-toggle="tab"> Events   </a></li>
+
+              <div class="btn-group pull-right">
+                <button type="button" class="btn btn-default"  style="padding: 10px; min-width: 30px;"
+                  id="btnPrevious" onclick="previousRecord()"> <i class="fa fa-chevron-left"></i> </button>
+
+                <div class="btn pa-btn-records"  style="padding: 10px; min-width: 30px; margin-left: 1px;"
+                  id="txtRecord"     > 0 / 0 </div>
+
+                <button type="button" class="btn btn-default"  style="padding: 10px; min-width: 30px; margin-left: 1px;"
+                  id="btnNext"     onclick="nextRecord()"> <i class="fa fa-chevron-right"></i> </button>
+              </div>
             </ul>
+
+
+
             <div class="tab-content" style="min-height: 430px">
 
 <!-- tab page 1 ------------------------------------------------------------ -->
@@ -139,15 +134,7 @@
                           <input class="form-control" id="txtMAC" type="text" readonly value="--">
                         </div>
                       </div>
-
-                      <!-- Random MAC -->
-                      <div class="form-group">
-                        <label class="col-sm-3 control-label">Random</label>
-                        <div class="col-sm-9" style="padding-top:6px;">
-                          <input class="checkbox blue hidden" id="chkRandomMAC" type="checkbox" disabled>
-                        </div>
-                      </div>
-
+      
                       <!-- Name -->
                       <div class="form-group">
                         <label class="col-sm-3 control-label">Name</label>
@@ -326,8 +313,8 @@
                               <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-expanded="false" id="dropdownButtonScanCycle">
                                 <span class="fa fa-caret-down"></span></button>
                               <ul id="dropdownScanCycle" class="dropdown-menu dropdown-menu-right">
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','1 min')">   Scan 1' every 5'</a></li>
-                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','15 min');"> Scan 12' every 15'</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','1 min')">   Scan 1 min every 5 min</a></li>
+                                <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','15 min');"> Scan 12 min every 15 min</a></li>
                                 <li><a href="javascript:void(0)" onclick="setTextValue('txtScanCycle','0 min');">  Don't Scan</a></li>
                               </ul>
                             </div>
@@ -380,14 +367,42 @@
                         </div>
                       </div>
 
+                      <!-- Archived -->
+                      <div class="form-group">
+                        <label class="col-sm-5 control-label">Archived</label>
+                        <div class="col-sm-7" style="padding-top:6px;">
+                          <input class="checkbox blue hidden" id="chkArchived" type="checkbox">
+                        </div>
+                      </div>
+
+                      <!-- Randomized MAC -->
+                      <div class="form-group" >
+                        <label class="col-sm-5 control-label">Random MAC</label>
+                        <div class="col-sm-7" style="padding-top:6px;">
+                          <span id="iconRandomMACinactive" data-toggle="tooltip" data-placement="right" title="Random MAC is Inactive">
+                            <i style="font-size: 24px;" class="text-gray glyphicon glyphicon-random"></i> &nbsp &nbsp </span>
+
+                          <span id="iconRandomMACactive"   data-toggle="tooltip" data-placement="right" title="Random MAC is Active" class="hidden">
+                            <i style="font-size: 24px;" class="text-blue glyphicon glyphicon-random"></i> &nbsp &nbsp </span>
+
+                          <a href="https://github.com/stevehoek/Pi.Alert/blob/main/docs/RANDOM_MAC.md" target="_blank" style="color: #777;"> 
+                            <i class="fa fa-info-circle"></i> </a>
+                        </div>
+                      </div>
+
                     </div>
                   </div>
 
                   <!-- Buttons -->
                   <div class="col-xs-12">
-                    <button type="button" class="btn btn-primary pull-right" style="padding: 10px; min-width: 90px;"                                              id="btnSave"    onclick="setDeviceData()">     Save </button>
-                    <button type="button" class="btn btn-default pull-right" style="padding: 10px; min-width: 90px; margin-right:10px;"                           id="btnRestore" onclick="getDeviceData(true)"> Reset Changes </button>
-                    <button type="button" class="btn bg-default pull-right"  style="padding: 10px; min-width: 90px; margin-right:10px; background-color:#ffd080;" id="btnDelete"  onclick="askDeleteDevice()">   Delete Device </button>
+                    <div class="pull-right">
+                        <button type="button" class="btn btn-default pa-btn pa-btn-delete"  style="margin-left:0px;"
+                          id="btnDelete"   onclick="askDeleteDevice()">   Delete Device </button>
+                        <button type="button" class="btn btn-default pa-btn" style="margin-left:6px;" 
+                          id="btnRestore"  onclick="getDeviceData(true)"> Reset Changes </button>
+                        <button type="button" disabled class="btn btn-primary pa-btn" style="margin-left:6px; " 
+                          id="btnSave"     onclick="setDeviceData()" >     Save </button>
+                    </div>
                   </div>
 
                 </div>
@@ -496,6 +511,8 @@
 <script>
 
   var mac                 = '';
+  var devicesList         = [];
+  var pos                 = -1;
   var parPeriod           = 'Front_Details_Period';
   var parTab              = 'Front_Details_Tab';
   var parSessionsRows     = 'Front_Details_Sessions_Rows';
@@ -570,6 +587,15 @@ function main () {
             initializeDatatables();
             initializeCalendar();
       
+            // Read Cookies
+            devicesList = getCookie('devicesList');
+            deleteCookie ('devicesList');
+            if (devicesList != '') {
+                devicesList = JSON.parse (devicesList);
+            } else {
+                devicesList = [];
+            }
+
             // query data
             getDeviceData(true);
             getSessionsPresenceEvents();
@@ -581,7 +607,14 @@ function main () {
                 $('#calendar').fullCalendar('rerenderEvents');
               }
             });
-  
+            
+            // Ask before exit without saving data
+            window.onbeforeunload = function(){
+              if ( ! document.getElementById('btnSave').hasAttribute('disabled') ) {
+                return 'Are you sure you want to discard unsaved changes?';
+              }
+            };
+
           });
         });
       });
@@ -657,6 +690,11 @@ function initializeiCheck () {
     } else {
       // Activate save & restore
       activateSaveRestoreData();
+
+      // Ask skip notifications
+      //if (event.currentTarget.id == 'chkArchived' ) {
+      //  askSkipNotifications();
+      //}      
     }
   });
 }
@@ -924,13 +962,22 @@ function periodChanged () {
 
 
 // -----------------------------------------------------------------------------
-function getDeviceData (updatePanelData=false) {
+function getDeviceData (readAllData=false) {
   // stop timer
   stopTimerRefreshData();
 
   // Check MAC
   if (mac == '') {
     return;
+  }
+
+  // Deactivate next previous buttons
+  if (readAllData) {
+    $('#btnPrevious').attr        ('disabled','');
+    $('#btnPrevious').addClass    ('text-gray50');
+    $('#btnNext').attr            ('disabled','');
+    $('#btnNext').addClass        ('text-gray50');
+    $("body").css                 ("cursor", "progress");
   }
 
   // get data from server
@@ -940,10 +987,16 @@ function getDeviceData (updatePanelData=false) {
 
     // check device exists
     if (deviceData['dev_MAC'] == null) {
-      $('#pageTitle').html ('Device not found: <small>'+ mac +'</small>');
+      // Status
+      $('#deviceStatus').html ('--');
+      $('#deviceStatus')[0].className = 'text-gray';
+      $('#deviceStatusIcon')[0].className = '';
+
+      $('#deviceSessions').html   ('--');
+      $('#deviceDownAlerts').html ('--');
+      $('#deviceEvents').html     ('--');
 
       $('#txtMAC').val             ('--');
-      $('#chkRandomMAC').iCheck    ('uncheck'); 
       $('#txtName').val            ('--');
       $('#txtOwner').val           ('--');
       $('#txtDeviceType').val      ('--');
@@ -964,10 +1017,22 @@ function getDeviceData (updatePanelData=false) {
       $('#chkAlertEvents').iCheck  ('uncheck') 
       $('#chkAlertDown').iCheck    ('uncheck') 
       $('#txtSkipRepeated').val    ('--');
-      $('#chkNewDevice').iCheck    ('uncheck') 
+      $('#chkNewDevice').iCheck    ('uncheck'); 
+      $('#chkArchived').iCheck     ('uncheck'); 
+
+      $('#iconRandomMACactive').addClass ('hidden');
+      $('#iconRandomMACinactive').removeClass ('hidden');
 
       // Deactivate controls
       $('#panDetails :input').attr('disabled', true);
+
+      // Check if device is deleted or does not exist in this session
+      if (pos == -1) {
+        devicesList = [];
+        $('#pageTitle').html ('Device not found: <small>'+ mac +'</small>');
+      } else {
+        $('#pageTitle').html ('Device deleted');
+      }
 
     } else {
 
@@ -1005,15 +1070,18 @@ function getDeviceData (updatePanelData=false) {
       }
   
       // Device info
-      if (updatePanelData) {
-        $('#txtMAC').val                             (deviceData['dev_MAC']);
-        if (deviceData['dev_RandomMAC'] == 1)        {$('#chkRandomMAC').iCheck('check');} 
+      if (readAllData) {
+        $('#panDetails :input').attr('disabled', false);
+
+        mac                                          =deviceData['dev_MAC'];
+
+        $('#txtMAC').val                             (deviceData['dev_MAC']);        
         $('#txtName').val                            (deviceData['dev_Name']);
         $('#txtOwner').val                           (deviceData['dev_Owner']);
         $('#txtDeviceType').val                      (deviceData['dev_DeviceType']);
         $('#txtVendor').val                          (deviceData['dev_Vendor']);
   
-        if (deviceData['dev_Favorite'] == 1)         {$('#chkFavorite').iCheck('check');} 
+        if (deviceData['dev_Favorite'] == 1)         {$('#chkFavorite').iCheck('check');}     else {$('#chkFavorite').iCheck('uncheck');}
         $('#txtGroup').val                           (deviceData['dev_Group']);
         $('#txtLocation').val                        (deviceData['dev_Location']);
         $('#txtComments').val                        (deviceData['dev_Comments']);
@@ -1022,27 +1090,93 @@ function getDeviceData (updatePanelData=false) {
         $('#txtLastConnection').val                  (deviceData['dev_LastConnection']);
         $('#txtLastIP').val                          (deviceData['dev_LastIP']);
         $('#txtStatus').val                          (deviceData['dev_Status']);
-        if (deviceData['dev_StaticIP'] == 1)         {$('#chkStaticIP').iCheck('check');} 
+        if (deviceData['dev_StaticIP'] == 1)         {$('#chkStaticIP').iCheck('check');}     else {$('#chkStaticIP').iCheck('uncheck');}
     
         $('#txtScanCycle').val                       (deviceData['dev_ScanCycle'] +' min');
-        if (deviceData['dev_AlertEvents'] == 1)      {$('#chkAlertEvents').iCheck('check');} 
-        if (deviceData['dev_AlertDeviceDown'] == 1)  {$('#chkAlertDown').iCheck('check');} 
+        if (deviceData['dev_AlertEvents'] == 1)      {$('#chkAlertEvents').iCheck('check');}  else {$('#chkAlertEvents').iCheck('uncheck');}
+        if (deviceData['dev_AlertDeviceDown'] == 1)  {$('#chkAlertDown').iCheck('check');}    else {$('#chkAlertDown').iCheck('uncheck');}
         $('#txtSkipRepeated').val                    (findSkipRepeated (deviceData['dev_SkipRepeated']));
-        if (deviceData['dev_NewDevice'] == 1)        {$('#chkNewDevice').iCheck('check');} 
+        if (deviceData['dev_NewDevice'] == 1)        {$('#chkNewDevice').iCheck('check');}    else {$('#chkNewDevice').iCheck('uncheck');}
+        if (deviceData['dev_Archived'] == 1)         {$('#chkArchived').iCheck('check');}     else {$('#chkArchived').iCheck('uncheck');} 
 
+        if (deviceData['dev_RandomMAC'] == 1)        {$('#iconRandomMACactive').removeClass   ('hidden');
+                                                      $('#iconRandomMACinactive').addClass    ('hidden'); }
+        else                                         {$('#iconRandomMACactive').addClass      ('hidden');
+                                                      $('#iconRandomMACinactive').removeClass ('hidden'); };
         deactivateSaveRestoreData ();
       }
 
+      // Check if device is part of the devicesList
+      pos = devicesList.indexOf (deviceData['rowid']);
+      if (pos == -1) {
+        devicesList =[deviceData['rowid']];
+        pos=0;
+      }
+    }
+
+    // Record number
+    $('#txtRecord').html (pos+1 +' / '+ devicesList.length);
+
+    // Deactivate previous button
+    if (pos <= 0) {
+      $('#btnPrevious').attr        ('disabled','');
+      $('#btnPrevious').addClass    ('text-gray50');
+    } else {
+      $('#btnPrevious').removeAttr  ('disabled');
+      $('#btnPrevious').removeClass ('text-gray50');
+    }
+
+    // Deactivate next button
+    if (pos >= (devicesList.length-1)) {
+      $('#btnNext').attr        ('disabled','');
+      $('#btnNext').addClass    ('text-gray50');
+    } else {
+      $('#btnNext').removeAttr  ('disabled');
+      $('#btnNext').removeClass ('text-gray50');
     }
 
     // Timer for refresh data
+    $("body").css("cursor", "default");
     newTimerRefreshData (getDeviceData);
   });
 }
 
 
 // -----------------------------------------------------------------------------
-function setDeviceData () {
+function previousRecord () {
+  // Save Changes
+  if ( ! document.getElementById('btnSave').hasAttribute('disabled') ) {
+    setDeviceData (previousRecord);
+    return;
+  }
+
+  // Previous Record
+  if (pos > 0) {
+    pos--;
+    mac = devicesList[pos].toString();
+    getDeviceData (true);
+  }
+}
+
+// -----------------------------------------------------------------------------
+function nextRecord () {
+  // Save Changes
+  if ( ! document.getElementById('btnSave').hasAttribute('disabled') ) {
+    setDeviceData (nextRecord);
+    return;
+  }
+
+  // Next Record
+  if (pos < (devicesList.length-1) ) {
+    pos++;
+    mac = devicesList[pos].toString();
+    getDeviceData (true);
+  }
+}
+
+
+// -----------------------------------------------------------------------------
+function setDeviceData (refreshCallback='') {
   // Check MAC
   if (mac == '') {
     return;
@@ -1064,13 +1198,47 @@ function setDeviceData () {
     + '&alertdown='      + ($('#chkAlertDown')[0].checked * 1)
     + '&skiprepeated='   + $('#txtSkipRepeated').val().split(' ')[0]
     + '&newdevice='      + ($('#chkNewDevice')[0].checked * 1)
+    + '&archived='       + ($('#chkArchived')[0].checked * 1)
     , function(msg) {
 
+    // deactivate button
     deactivateSaveRestoreData ();
     showMessage (msg);
+
+    // Callback fuction
+    if (typeof refreshCallback == 'function') {
+      refreshCallback();
+    }
   });
 }
 
+
+// -----------------------------------------------------------------------------
+function askSkipNotifications () {
+  // Check MAC
+  if (mac == '') {
+    return;
+  }
+
+  // When Archived
+  if ($('#chkArchived')[0].checked && $('#txtScanCycle').val().split(' ')[0] != "0") {
+    // Ask skip notifications
+    showModalDefault ('Device Archived', 'Do you want to skip all notifications for this device?',
+      'Cancel', 'Ok', 'skipNotifications');
+  }
+}
+
+// -----------------------------------------------------------------------------
+function skipNotifications () {
+  // Check MAC
+  if (mac == '') {
+    return;
+  }
+
+  // Set cycle 0
+  $('#txtScanCycle').val ('0 min');
+  activateSaveRestoreData();
+}
 
 // -----------------------------------------------------------------------------
 function askDeleteDevice () {
@@ -1080,7 +1248,7 @@ function askDeleteDevice () {
   }
 
   // Ask delete device
-  showModal ('Delete Device', 'Are you sure you want to delete this device?',
+  showModalWarning ('Delete Device', 'Are you sure you want to delete this device?<br>(maybe you prefer to archive it)',
     'Cancel', 'Delete', 'deleteDevice');
 }
 

@@ -45,8 +45,7 @@
             <div class="small-box bg-aqua pa-small-box-aqua pa-small-box-2">
               <div class="inner"> <h3 id="eventsAll"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-bolt text-aqua-20"></i> </div>
-
-              <div class="small-box-footer"> All events <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> All Events <i class="fa fa-arrow-circle-right"></i> </div>            
             </div>
           </a>
         </div>
@@ -57,8 +56,7 @@
             <div class="small-box bg-green pa-small-box-green pa-small-box-2">
               <div class="inner"> <h3 id="eventsSessions"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-plug text-green-20"></i> </div>
-
-              <div class="small-box-footer"> Sessions <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Sessions <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -69,8 +67,7 @@
             <div  class="small-box bg-yellow pa-small-box-yellow pa-small-box-2">
               <div class="inner"> <h3 id="eventsMissing"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-exchange text-yellow-20"></i> </div>
-
-              <div class="small-box-footer"> Missing Sessions <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Missing Events <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -78,11 +75,10 @@
 <!-- top small box --------------------------------------------------------- -->
         <div class="col-lg-2 col-sm-4 col-xs-6">
           <a href="#" onclick="javascript: getEvents('voided');">
-            <div  class="small-box bg-yellow pa-small-box-yellow pa-small-box-2">
+            <div  class="small-box bg-gray pa-small-box-gray pa-small-box-2">
               <div class="inner"> <h3 id="eventsVoided"> -- </h3> </div>
-              <div class="icon text-aqua-20"> <i class="fa fa-exclamation-circle text-yellow-20"></i> </div>
-
-              <div class="small-box-footer"> Voided Sessions <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="icon"> <i class="fa fa-exclamation-circle text-gray-20"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Voided Events <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -90,11 +86,10 @@
 <!-- top small box --------------------------------------------------------- -->
         <div class="col-lg-2 col-sm-4 col-xs-6">
           <a href="#" onclick="javascript: getEvents('new');">
-            <div  class="small-box bg-yellow pa-small-box-yellow pa-small-box-2">
+            <div  class="small-box bg-orange pa-small-box-orange pa-small-box-2">
               <div class="inner"> <h3 id="eventsNewDevices"> -- </h3> </div>
-              <div class="icon"> <i class="ion ion-plus-round text-yellow-20"></i> </div>
-
-              <div class="small-box-footer"> New Devices <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="icon"> <i class="ion ion-plus-round text-orange-20"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> New Devices <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -105,8 +100,7 @@
             <div  class="small-box bg-red pa-small-box-red pa-small-box-2">
               <div class="inner"> <h3 id="eventsDown"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-warning text-red-20"></i> </div>
-
-              <div class="small-box-footer"> Down Alerts <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Down Alerts <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -328,8 +322,8 @@ function getEvents (p_eventsType) {
     case 'all':       tableTitle = 'All Events';          color = 'aqua';    sesionCols = false;  break;
     case 'sessions':  tableTitle = 'Sessions';            color = 'green';   sesionCols = true;   break;
     case 'missing':   tableTitle = 'Missing Events';      color = 'yellow';  sesionCols = true;   break;
-    case 'voided':    tableTitle = 'Voided Events';       color = 'yellow';  sesionCols = false;  break;
-    case 'new':       tableTitle = 'New Devices Events';  color = 'yellow';  sesionCols = false;  break;
+    case 'voided':    tableTitle = 'Voided Events';       color = 'gray';    sesionCols = false;  break;
+    case 'new':       tableTitle = 'New Devices Events';  color = 'orange';  sesionCols = false;  break;
     case 'down':      tableTitle = 'Down Alerts';         color = 'red';     sesionCols = false;  break;
     default:          tableTitle = 'Events';              boxClass = '';     sesionCols = false;  break;
   } 
