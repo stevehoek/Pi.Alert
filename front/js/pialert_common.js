@@ -217,7 +217,7 @@ function refreshDevices (cycle) {
       if (data != "") {
         console.log(data);
         msg = "<pre>"+data+"</pre>"
-        showModal ('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
+        showModalDefault('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
       }
     } );
   } );
@@ -240,7 +240,7 @@ function showLatestReport (cycle) {
       if (data != "") {
         console.log(data);
         msg = "<pre>"+data+"</pre>"
-        showModal ('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
+        showModalDefault('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
       }
     } );
   } );

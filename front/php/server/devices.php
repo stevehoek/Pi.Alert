@@ -396,11 +396,23 @@ function getGroups() {
   // SQL
   $sql = 'SELECT DISTINCT 1 as dev_Order, dev_Group
           FROM Devices
-          WHERE dev_Group NOT IN ("(unknown)", "Others") AND dev_Group <> ""
+          WHERE dev_Group NOT IN ("",
+                 "Always on", "On demand",
+                 "Network", "Wired", "Wifi", 
+                 "Friends", "Personal",
+                 "Other")
+
           UNION SELECT 1 as dev_Order, "Always on"
-          UNION SELECT 1 as dev_Order, "Friends"
-          UNION SELECT 1 as dev_Order, "Personal"
-          UNION SELECT 2 as dev_Order, "Others"
+          UNION SELECT 1 as dev_Order, "On demand"
+
+          UNION SELECT 2 as dev_Order, "Network"
+          UNION SELECT 2 as dev_Order, "Wired"
+          UNION SELECT 2 as dev_Order, "Wifi"
+
+          UNION SELECT 3 as dev_Order, "Friends"
+          UNION SELECT 3 as dev_Order, "Personal"
+
+          UNION SELECT 4 as dev_Order, "Other"
           ORDER BY 1,2 ';
   $result = $db->query($sql);
 
