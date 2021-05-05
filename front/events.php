@@ -305,7 +305,8 @@ function getEventsTotals () {
     $('#eventsVoided').html     (totalsEvents[3].toLocaleString());
     $('#eventsNewDevices').html (totalsEvents[4].toLocaleString());
     $('#eventsDown').html       (totalsEvents[5].toLocaleString());
-
+  })
+  .always(function() {
     // Timer for refresh data
     newTimerRefreshData (getEventsTotals);
   });

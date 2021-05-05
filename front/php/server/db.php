@@ -17,13 +17,20 @@ $DBFILE = '../../../db/pialert.db';
 //------------------------------------------------------------------------------
 // Connect DB
 //------------------------------------------------------------------------------
-function SQLite3_connect ($trytoreconnect) {
+function SQLite3_connect ($trytoreconnect, $readonly) {
   global $DBFILE;
+
   try
   {
     // connect to database
-    // return new SQLite3($DBFILE, SQLITE3_OPEN_READONLY);
-    return new SQLite3($DBFILE, SQLITE3_OPEN_READWRITE);
+    if($readonly) 
+    {
+      return new SQLite3($DBFILE, SQLITE3_OPEN_READONLY);
+    }
+    else
+    {
+      return new SQLite3($DBFILE, SQLITE3_OPEN_READWRITE);
+    }
   }
   catch (Exception $exception)
   {
@@ -32,7 +39,7 @@ function SQLite3_connect ($trytoreconnect) {
     if($trytoreconnect)
     {
       sleep(3);
-      return SQLite3_connect(false);
+      return SQLite3_connect(false, $readonly);
     }
   }
 }
@@ -41,20 +48,33 @@ function SQLite3_connect ($trytoreconnect) {
 //------------------------------------------------------------------------------
 // Open DB
 //------------------------------------------------------------------------------
-function OpenDB () {
+function OpenDB ($readonly) {
   global $DBFILE;
   global $db;
 
   if(strlen($DBFILE) == 0)
   {
-    die ('Database no available');
+    die ('Database not configured');
   }
 
-  $db = SQLite3_connect(true);
+  $db = SQLite3_connect(true, $readonly);
   if(!$db)
   {
     die ('Error connecting to database');
   }
 }
-   
+
+
+//------------------------------------------------------------------------------
+// Close DB
+//------------------------------------------------------------------------------
+function CloseDB () {
+  global $db;
+
+  if($db)
+  {
+    $db->close();
+  }    
+}
+
 ?>

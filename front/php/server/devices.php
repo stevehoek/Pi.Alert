@@ -21,28 +21,27 @@
   // Set maximum execution time to 15 seconds
   ini_set ('max_execution_time','15');
   
-  // Open DB
-  OpenDB();
-
   // Action functions
   if (isset ($_REQUEST['action']) && !empty ($_REQUEST['action'])) {
     $action = $_REQUEST['action'];
-    switch ($action) {
-      case 'getDeviceData':           getDeviceData();                         break;
-      case 'setDeviceData':           setDeviceData();                         break;
-      case 'deleteDevice':            deleteDevice();                          break;
+    switch ($action) {                                                        
+      case 'getDeviceData':           OpenDB(true);   getDeviceData();          break;
+      case 'setDeviceData':           OpenDB(false);  setDeviceData();          break;
+      case 'deleteDevice':            OpenDB(false);  deleteDevice();           break;
  
-      case 'getDevicesTotals':        getDevicesTotals();                      break;
-      case 'getDevicesList':          getDevicesList();                        break;
-      case 'getDevicesListCalendar':  getDevicesListCalendar();                break;
+      case 'getDevicesTotals':        OpenDB(true);   getDevicesTotals();       break;
+      case 'getDevicesList':          OpenDB(true);   getDevicesList();         break;
+      case 'getDevicesListCalendar':  OpenDB(true);   getDevicesListCalendar(); break;
 
-      case 'getOwners':               getOwners();                             break;
-      case 'getDeviceTypes':          getDeviceTypes();                        break;
-      case 'getGroups':               getGroups();                             break;
-      case 'getLocations':            getLocations();                          break;
+      case 'getOwners':               OpenDB(true);   getOwners();              break;
+      case 'getDeviceTypes':          OpenDB(true);   getDeviceTypes();         break;
+      case 'getGroups':               OpenDB(true);   getGroups();              break;
+      case 'getLocations':            OpenDB(true);   getLocations();           break;
 
-      default:                        logServerConsole ('Action: '. $action);  break;
+      default:                        logServerConsole ('Action: '. $action);   break;
     }
+
+    CloseDB();
   }
 
 

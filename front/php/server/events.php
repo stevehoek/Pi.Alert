@@ -22,7 +22,7 @@
   ini_set ('max_execution_time','60');
   
   // Open DB
-  OpenDB();
+  OpenDB(true);
 
   // Action functions
   if (isset ($_REQUEST['action']) && !empty ($_REQUEST['action'])) {
@@ -36,6 +36,8 @@
       case 'getEventsCalendar':  getEventsCalendar();                     break;
       default:                   logServerConsole ('Action: '. $action);  break;
     }
+  
+    CloseDB();
   }
 
 

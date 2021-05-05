@@ -328,10 +328,11 @@ function getDevicesTotals () {
     $('#devicesNew').html        (totalsDevices[3].toLocaleString());
     $('#devicesDown').html       (totalsDevices[4].toLocaleString());
     $('#devicesArchived').html   (totalsDevices[5].toLocaleString());
-
+  })
+  .always(function() {
     // Timer for refresh data
     newTimerRefreshData (getDevicesTotals);
-  } );
+  });
 }
 
 

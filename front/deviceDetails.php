@@ -963,13 +963,13 @@ function periodChanged () {
 
 // -----------------------------------------------------------------------------
 function getDeviceData (readAllData=false) {
-  // stop timer
-  stopTimerRefreshData();
-
   // Check MAC
   if (mac == '') {
     return;
   }
+
+  // stop timer
+  stopTimerRefreshData();
 
   // Deactivate next previous buttons
   if (readAllData) {
@@ -1134,7 +1134,8 @@ function getDeviceData (readAllData=false) {
       $('#btnNext').removeAttr  ('disabled');
       $('#btnNext').removeClass ('text-gray50');
     }
-
+  })
+  .always(function() {
     // Timer for refresh data
     $("body").css("cursor", "default");
     newTimerRefreshData (getDeviceData);
