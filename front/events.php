@@ -211,6 +211,12 @@ function main () {
     });
   });
 
+  updateHeader();
+}
+
+
+// -----------------------------------------------------------------------------
+function updateHeader () {
   // HEADER update
   // get parameter value
   $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {

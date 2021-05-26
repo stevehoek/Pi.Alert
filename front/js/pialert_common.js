@@ -9,11 +9,13 @@
 
 // -----------------------------------------------------------------------------
 var timerRefreshData = ''
+var timerRefreshDevices = ''
 var modalCallbackFunction = '';
 
 
 // -----------------------------------------------------------------------------
-function setCookie (cookie, value, expirationHours='') {
+function setCookie(cookie, value, expirationHours='') 
+{
   // Calc expiration date
   var expires = '';
   if (typeof expirationHours === 'number') {
@@ -26,7 +28,8 @@ function setCookie (cookie, value, expirationHours='') {
 
 
 // -----------------------------------------------------------------------------
-function getCookie (cookie) {
+function getCookie(cookie) 
+{
   // Array of cookies
   var allCookies = document.cookie.split(';');
 
@@ -47,13 +50,15 @@ function getCookie (cookie) {
 
 
 // -----------------------------------------------------------------------------
-function deleteCookie (cookie) {
+function deleteCookie(cookie) 
+{
   document.cookie = cookie + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC';
 }
 
 
 // -----------------------------------------------------------------------------
-function deleteAllCookies() {
+function deleteAllCookies() 
+{
   // Array of cookies
   var allCookies = document.cookie.split(";");
 
@@ -68,7 +73,8 @@ function deleteAllCookies() {
 
 
 // -----------------------------------------------------------------------------
-function showModalDefault (title, message, btnCancel, btnOK, callbackFunction) {
+function showModalDefault(title, message, btnCancel, btnOK, callbackFunction) 
+{
   // set captions
   $('#modal-default-title').html   (title);
   $('#modal-default-message').html (message);
@@ -82,7 +88,8 @@ function showModalDefault (title, message, btnCancel, btnOK, callbackFunction) {
 
 
 // -----------------------------------------------------------------------------
-function showModalWarning (title, message, btnCancel, btnOK, callbackFunction) {
+function showModalWarning(title, message, btnCancel, btnOK, callbackFunction) 
+{
   // set captions
   $('#modal-warning-title').html   (title);
   $('#modal-warning-message').html (message);
@@ -96,7 +103,8 @@ function showModalWarning (title, message, btnCancel, btnOK, callbackFunction) {
 
 
 // -----------------------------------------------------------------------------
-function modalDefaultOK () {
+function modalDefaultOK() 
+{
   // Hide modal
   $('#modal-default').modal('hide');
 
@@ -108,7 +116,8 @@ function modalDefaultOK () {
 
 
 // -----------------------------------------------------------------------------
-function modalWarningOK () {
+function modalWarningOK() 
+{
   // Hide modal
   $('#modal-warning').modal('hide');
 
@@ -120,7 +129,8 @@ function modalWarningOK () {
 
 
 // -----------------------------------------------------------------------------
-function showMessage (textMessage="") {
+function showMessage(textMessage="") 
+{
   if (textMessage.toLowerCase().includes("error")  ) {
     // show error
     alert (textMessage);
@@ -137,7 +147,8 @@ function showMessage (textMessage="") {
 
 
 // -----------------------------------------------------------------------------
-function setParameter (parameter, value) {
+function setParameter(parameter, value) 
+{
   // Retry
   $.get('php/server/parameters.php?action=set&parameter=' + parameter +
     '&value='+ value,
@@ -160,7 +171,8 @@ function setParameter (parameter, value) {
 
 
 // -----------------------------------------------------------------------------
-function sleep(milliseconds) {
+function sleep(milliseconds) 
+{
   const date = Date.now();
   let currentDate = null;
   do {
@@ -170,7 +182,8 @@ function sleep(milliseconds) {
 
 
 // -----------------------------------------------------------------------------
-function translateHTMLcodes (text) {
+function translateHTMLcodes(text) 
+{
   if (text == null) {
     return null;
   }
@@ -181,7 +194,8 @@ function translateHTMLcodes (text) {
 
 
 // -----------------------------------------------------------------------------
-function stopTimerRefreshData () {
+function stopTimerRefreshData() 
+{
   try {
     clearTimeout (timerRefreshData); 
   } catch (e) {}
@@ -189,21 +203,42 @@ function stopTimerRefreshData () {
 
 
 // -----------------------------------------------------------------------------
-function newTimerRefreshData (refeshFunction) {
+function newTimerRefreshData(refeshFunction) 
+{
   timerRefreshData = setTimeout (function() {
     refeshFunction();
-  }, 5000);
+  }, 15000); //15s
 }
 
 
 // -----------------------------------------------------------------------------
-function debugTimer () {
+function stopTimerRefreshDevices() 
+{
+  try {
+    clearTimeout(timerRefreshDevices); 
+  } catch (e) {}
+}
+
+
+// -----------------------------------------------------------------------------
+function newTimerRefreshDevices(refeshFunction) 
+{
+  timerRefreshDevices = setTimeout (function() {
+    refeshFunction();
+  }, 75000); //1m15s
+}
+
+
+// -----------------------------------------------------------------------------
+function debugTimer() 
+{
   $('#pageTitle').html (new Date().getSeconds());
 }
 
 
 // -----------------------------------------------------------------------------
-function refreshDevices (cycle) {
+function refreshDevices(cycle) 
+{
   // show temporal notification
   time = (cycle * 2);
   msg = "Refreshing.  Please wait up to " + time + " seconds...";
@@ -217,19 +252,23 @@ function refreshDevices (cycle) {
       if (data != "") {
         console.log(data);
         msg = "<pre>"+data+"</pre>"
-        showModalDefault('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
+        showModalDefault('UniFi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
       }
     } );
   } );
 }
 
-function refreshPage () {
+
+// -----------------------------------------------------------------------------
+function refreshPage() 
+{
   window.location.href = window.location.href;
 }
 
 
 // -----------------------------------------------------------------------------
-function showLatestReport (cycle) {
+function showLatestReport(cycle) 
+{
   // show temporal notification
   $("#alert-message").html("Fetching latest Report...");
   $("#notification").fadeIn(1, function() {
@@ -240,7 +279,7 @@ function showLatestReport (cycle) {
       if (data != "") {
         console.log(data);
         msg = "<pre>"+data+"</pre>"
-        showModalDefault('Pi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
+        showModalDefault('UniFi.Alert Report', msg,'Cancel', 'OK', 'refreshPage');
       }
     } );
   } );

@@ -200,6 +200,15 @@ function main () {
     });
   });
 
+  updateHeader();
+
+  // Timer for refresh
+  newTimerRefreshDevices(refreshDevices);
+}
+
+
+// -----------------------------------------------------------------------------
+function updateHeader () {
   // HEADER update
   // get parameter value
   $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
@@ -216,6 +225,7 @@ function main () {
     });
   });
 }
+
 
 // -----------------------------------------------------------------------------
 function initializeDatatable () {
@@ -296,6 +306,8 @@ function initializeDatatable () {
     }
   });
 
+  $.fn.dataTable.ext.errMode = 'none';
+
   // Save cookie Rows displayed, and Parameters rows & order
   $('#tableDevices').on( 'length.dt', function ( e, settings, len ) {
     setParameter (parTableRows, len);
@@ -315,9 +327,6 @@ function initializeDatatable () {
 
 // -----------------------------------------------------------------------------
 function getDevicesTotals () {
-  // stop timer
-  stopTimerRefreshData();
-
   // get totals and put in boxes
   $.get('php/server/devices.php?action=getDevicesTotals', function(data) {
     var totalsDevices = JSON.parse(data);
@@ -330,14 +339,12 @@ function getDevicesTotals () {
     $('#devicesArchived').html   (totalsDevices[5].toLocaleString());
   })
   .always(function() {
-    // Timer for refresh data
-    newTimerRefreshData (getDevicesTotals);
   });
 }
 
 
 // -----------------------------------------------------------------------------
-function getDevicesList (status) {
+function getDevicesList (status='all') {
   // Save status selected
   deviceStatus = status;
 
@@ -359,7 +366,23 @@ function getDevicesList (status) {
 
   // Define new datasource URL and reload
   $('#tableDevices').DataTable().ajax.url(
-    'php/server/devices.php?action=getDevicesList&status=' + deviceStatus).load();
-};
+    'php/server/devices.php?action=getDevicesList&status=' + deviceStatus).load(function(data) {
+      //success callback
+  });
+}
+
+
+// -----------------------------------------------------------------------------
+function refreshDevices() {
+  // stop timer
+  stopTimerRefreshDevices();
+
+  updateHeader()
+  getDevicesTotals();
+  getDevicesList();
+
+  // Timer for refresh
+  newTimerRefreshDevices(refreshDevices);
+}
 
 </script>

@@ -14,7 +14,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Pi.Alert</title>
+  <title>UniFi.Alert</title>
 
   <!-- Tell the browser to be responsive to screen width -->
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
@@ -68,7 +68,7 @@
       <!-- mini logo for sidebar mini 50x50 pixels -->
       <span class="logo-mini">P<b>a</b></span>
       <!-- logo for regular state and mobile devices -->
-      <span class="logo-lg">Pi<b>.Alert</b></span>
+      <span class="logo-lg">UniFi<b>.Alert</b></span>
     </a>
 
 <!-- ----------------------------------------------------------------------- -->
@@ -93,7 +93,7 @@
           <li><a style="pointer-events:none;" class="hidden-xs"><?php echo gethostname(); ?></a></li>
 
           <!-- Refresh -->
-          <li><a href="javascript:refreshDevices(15);"><i class="fa fa-retweet"></i><span> Refresh</span></a></li>
+          <li><a href="javascript:refreshDevices(15);"><i class="fa fa-retweet"></i><span> Scan</span></a></li>
 
           <!-- Refresh -->
           <li><a href="javascript:showLatestReport(15);"><i class="fa fa-inbox"></i><span></span></a></li>
@@ -105,14 +105,14 @@
               <!-- The user image in the navbar-->
               <img src="img/pialertLogoWhite.png" class="user-image" style="border-radius: initial" alt="Pi.Alert Logo">
               <!-- hidden-xs hides the username on small devices so only the image appears. -->
-              <span class="hidden-xs">Pi.Alert</span>
+              <span class="hidden-xs">UniFi.Alert</span>
             </a>
             <ul class="dropdown-menu">
               <!-- The user image in the menu -->
               <li class="user-header">
                 <img src="img/pialertLogoWhite.png" class="img-circle" alt="Pi.Alert Logo" style="border-color:transparent">
                 <p>
-                  Pi.Alert 
+                  UniFi.Alert 
                   <small>Open Source Network Monitor</small>
                 </p>
               </li>
@@ -121,7 +121,7 @@
               <li class="user-body">
                 <div class="row">
                   <div class="col-xs-4 text-center">
-                    <a target="_blank" href="https://github.com/stevehoek/Pi.Alert">GitHub Pi.Alert</a>
+                    <a target="_blank" href="https://github.com/stevehoek/Pi.Alert">GitHub UniFi.Alert</a>
                   </div>
                   <div class="col-xs-4 text-center">
                     <a target="_blank" href="https://github.com/stevehoek/Pi.Alert/issues">Support</a>

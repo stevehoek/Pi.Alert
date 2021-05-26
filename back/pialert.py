@@ -71,7 +71,7 @@ def main():
     global dbUpdated
 
     # Header
-    print('\nPi.Alert ' + VERSION +' ('+ VERSION_DATE +')')
+    print('\nUniFi.Alert ' + VERSION +' ('+ VERSION_DATE +')')
     print('---------------------------------------------------------')
 
     # Initialize global variables
@@ -1799,7 +1799,7 @@ def AppendLineToFile(pPath, pText):
 def SendEmail(pText, pHTML):
     # Compose email
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = 'Pi.Alert Report'
+    msg['Subject'] = 'UniFi.Alert Report'
     msg['From'] = REPORT_FROM
     msg['To'] = REPORT_TO
     msg.attach(MIMEText(pText, 'plain'))
