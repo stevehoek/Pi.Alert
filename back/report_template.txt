@@ -1,5 +1,5 @@
 ========================================
-            Pi.Alert Report
+            UniFi.Alert Report
 ========================================
 
   Report Date: <REPORT_DATE>
@@ -24,4 +24,4 @@ Events
 <TABLE_EVENTS>
 </SECTION_EVENTS>
 ----------------------------------------------------------------------
-(?) <PIALERT_YEAR>           Pi.Alert <PIALERT_VERSION> (<PIALERT_VERSION_DATE>)           GNU GPLv3
+(?) <PIALERT_YEAR>           UniFi.Alert <PIALERT_VERSION> (<PIALERT_VERSION_DATE>)           GNU GPLv3

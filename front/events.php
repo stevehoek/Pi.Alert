@@ -211,6 +211,12 @@ function main () {
     });
   });
 
+  updateHeader();
+}
+
+
+// -----------------------------------------------------------------------------
+function updateHeader () {
   // HEADER update
   // get parameter value
   $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
@@ -305,7 +311,8 @@ function getEventsTotals () {
     $('#eventsVoided').html     (totalsEvents[3].toLocaleString());
     $('#eventsNewDevices').html (totalsEvents[4].toLocaleString());
     $('#eventsDown').html       (totalsEvents[5].toLocaleString());
-
+  })
+  .always(function() {
     // Timer for refresh data
     newTimerRefreshData (getEventsTotals);
   });

@@ -21,28 +21,27 @@
   // Set maximum execution time to 15 seconds
   ini_set ('max_execution_time','15');
   
-  // Open DB
-  OpenDB();
-
   // Action functions
   if (isset ($_REQUEST['action']) && !empty ($_REQUEST['action'])) {
     $action = $_REQUEST['action'];
-    switch ($action) {
-      case 'getDeviceData':           getDeviceData();                         break;
-      case 'setDeviceData':           setDeviceData();                         break;
-      case 'deleteDevice':            deleteDevice();                          break;
+    switch ($action) {                                                        
+      case 'getDeviceData':           OpenDB(true);   getDeviceData();          break;
+      case 'setDeviceData':           OpenDB(false);  setDeviceData();          break;
+      case 'deleteDevice':            OpenDB(false);  deleteDevice();           break;
  
-      case 'getDevicesTotals':        getDevicesTotals();                      break;
-      case 'getDevicesList':          getDevicesList();                        break;
-      case 'getDevicesListCalendar':  getDevicesListCalendar();                break;
+      case 'getDevicesTotals':        OpenDB(true);   getDevicesTotals();       break;
+      case 'getDevicesList':          OpenDB(true);   getDevicesList();         break;
+      case 'getDevicesListCalendar':  OpenDB(true);   getDevicesListCalendar(); break;
 
-      case 'getOwners':               getOwners();                             break;
-      case 'getDeviceTypes':          getDeviceTypes();                        break;
-      case 'getGroups':               getGroups();                             break;
-      case 'getLocations':            getLocations();                          break;
+      case 'getOwners':               OpenDB(true);   getOwners();              break;
+      case 'getDeviceTypes':          OpenDB(true);   getDeviceTypes();         break;
+      case 'getGroups':               OpenDB(true);   getGroups();              break;
+      case 'getLocations':            OpenDB(true);   getLocations();           break;
 
-      default:                        logServerConsole ('Action: '. $action);  break;
+      default:                        logServerConsole ('Action: '. $action);   break;
     }
+
+    CloseDB();
   }
 
 
@@ -396,11 +395,23 @@ function getGroups() {
   // SQL
   $sql = 'SELECT DISTINCT 1 as dev_Order, dev_Group
           FROM Devices
-          WHERE dev_Group NOT IN ("(unknown)", "Others") AND dev_Group <> ""
+          WHERE dev_Group NOT IN ("",
+                 "Always on", "On demand",
+                 "Network", "Wired", "Wifi", 
+                 "Friends", "Personal",
+                 "Other")
+
           UNION SELECT 1 as dev_Order, "Always on"
-          UNION SELECT 1 as dev_Order, "Friends"
-          UNION SELECT 1 as dev_Order, "Personal"
-          UNION SELECT 2 as dev_Order, "Others"
+          UNION SELECT 1 as dev_Order, "On demand"
+
+          UNION SELECT 2 as dev_Order, "Network"
+          UNION SELECT 2 as dev_Order, "Wired"
+          UNION SELECT 2 as dev_Order, "Wifi"
+
+          UNION SELECT 3 as dev_Order, "Friends"
+          UNION SELECT 3 as dev_Order, "Personal"
+
+          UNION SELECT 4 as dev_Order, "Other"
           ORDER BY 1,2 ';
   $result = $db->query($sql);
 

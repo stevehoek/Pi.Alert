@@ -187,6 +187,12 @@ function main () {
     }
   });
   
+  updateHeader();
+}
+
+
+// -----------------------------------------------------------------------------
+function updateHeader () {
   // HEADER update
   // get parameter value
   $.get('php/server/parameters.php?action=get&parameter='+ parLastScanTime, function(data) {
@@ -324,10 +330,11 @@ function getDevicesTotals () {
     $('#devicesNew').html        (totalsDevices[3].toLocaleString());
     $('#devicesDown').html       (totalsDevices[4].toLocaleString());
     $('#devicesArchived').html   (totalsDevices[5].toLocaleString());    
-
+  })
+  .always(function() {
     // Timer for refresh data
     newTimerRefreshData (getDevicesTotals);
-  } );
+  });
 }
 
 

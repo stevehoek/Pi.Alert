@@ -21,17 +21,16 @@
   // Set maximum execution time to 15 seconds
   ini_set ('max_execution_time','15');
   
-  // Open DB
-  OpenDB();
-
   // Action functions
   if (isset ($_REQUEST['action']) && !empty ($_REQUEST['action'])) {
     $action = $_REQUEST['action'];
     switch ($action) {
-      case 'get':  getParameter();                          break;
-      case 'set':  setParameter();                          break;
+      case 'get':  OpenDB(true);    getParameter();         break;
+      case 'set':  OpenDB(false);   setParameter();         break;
       default:     logServerConsole ('Action: '. $action);  break;
     }
+
+    CloseDB();
   }
 
 
