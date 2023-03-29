@@ -1216,6 +1216,10 @@ function setDeviceData (refreshCallback='') {
     if (typeof refreshCallback == 'function') {
       refreshCallback();
     }
+    else
+    {
+      getDeviceData();
+    }
   });
 }
 
@@ -1273,7 +1277,10 @@ function deleteDevice () {
   });
 
   // Deactivate controls
-  $('#panDetails :input').attr('disabled', true);
+  //$('#panDetails :input').attr('disabled', true);
+
+  // Go back to Devices page
+  window.location.href = "devices.php";
 }
 
 

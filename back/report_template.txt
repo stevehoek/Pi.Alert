@@ -6,7 +6,11 @@
   Scan Cycle:  <SCAN_CYCLE>
   Server:      <SERVER_NAME>
 
-<SECTION_INTERNET>
+<SECTION_MESSAGES>
+Messages
+----------------------------------------------------------------------
+<TABLE_MESSAGES>
+</SECTION_MESSAGES><SECTION_INTERNET>
 Internet
 ----------------------------------------------------------------------
 <TABLE_INTERNET>

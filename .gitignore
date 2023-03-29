@@ -15,3 +15,10 @@ log/IP_changes.log
 log/report_output.txt
 log/report_output.html
 unificontrol/
+back/pialert.py.bak
+back/report_template.debug.txt
+back/report_template.debug.html
+back/send-message.py
+back/test.py
+log/report_output.debug.html
+log/report_output.debug.txt

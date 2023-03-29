@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 #-------------------------------------------------------------------------------
 #  Pi.Alert
@@ -14,11 +14,14 @@
 # IMPORTS
 #===============================================================================
 
-from __future__                 import print_function
-from email.mime.multipart       import MIMEMultipart
-from email.mime.text            import MIMEText
-from unificontrol               import UnifiClient
-from unificontrol.constants     import UnifiServerType
+from __future__                             import print_function
+from datetime                               import timezone
+from datetime                               import timedelta
+from string                                 import Formatter
+from email.mime.multipart                   import MIMEMultipart
+from email.mime.text                        import MIMEText
+from requests                               import Request, Session, packages
+from requests.packages.urllib3.exceptions   import InsecureRequestWarning
 
 import sys
 import subprocess
@@ -32,10 +35,7 @@ import smtplib
 import csv
 import json
 import ipaddress
-
-from datetime                   import timezone
-from datetime                   import timedelta
-from string                     import Formatter
+import base64
 
 
 #===============================================================================
@@ -69,6 +69,7 @@ def main():
     global sqlConnection
     global sql
     global dbUpdated
+    global listMessages
 
     # Header
     print('\nUniFi.Alert ' + VERSION +' ('+ VERSION_DATE +')')
@@ -76,6 +77,7 @@ def main():
 
     # Initialize global variables
     logTimestamp  = datetime.datetime.now()
+    listMessages = []
 
     # DB
     sqlConnection = None
@@ -495,18 +497,34 @@ def ScanNetwork():
     if (ARPSCAN_ACTIVE):
         # arp-scan command
         print('    arp-scan Method...')
-        PrintLog('arp-scan starts...')
         retries = scanCycleData['cic_arpscanCycles']
-        # TESTING - Fast scan
-        # retries = 1
-        scanDevices = ExecuteARPScan(retries)
-        PrintLog('arp-scan ends')
-        # DEBUG - print number of rows updated
-        # print(scanDevices)
+        try:
+            scanDevices = ExecuteARPScan(retries)
+        except:
+            messageTime = datetime.datetime.now()
+            messageTimeFormatted = messageTime.strftime('%m-%d-%Y %I:%M %p')
+            message = dict([
+                ('messageType', "Error"),
+                ('messageDateTime', messageTimeFormatted),
+                ('messageIP', ""),
+                ('messageText', "Exception occurred when executing ExecuteARPScan")
+            ])
+            listMessages.append(message)
     elif (UNIFI_ACTIVE):
         # UniFi method
         print('    UniFi Method...')
-        scanDevices = QueryUniFiAPI(cycleInterval)
+        try:
+            scanDevices = QueryUniFiAPI(cycleInterval)
+        except:
+            messageTime = datetime.datetime.now()
+            messageTimeFormatted = messageTime.strftime('%m-%d-%Y %I:%M %p')
+            message = dict([
+                ('messageType', "Error"),
+                ('messageDateTime', messageTimeFormatted),
+                ('messageIP', UNIFI_HOST),
+                ('messageText', "Exception occurred when executing QueryUniFiAPI")
+            ])
+            listMessages.append(message)
     else:
         print('    ERROR: No primary scan method specified in the config!')
         return 1
@@ -516,56 +534,79 @@ def ScanNetwork():
     if (PIHOLE_ACTIVE):
         # Pi-hole method
         print('    Pi-hole Method...')
-        CopyPiHoleNetwork()
+        try:
+            CopyPiHoleNetwork()
+        except:
+            messageTime = datetime.datetime.now()
+            messageTimeFormatted = messageTime.strftime('%m-%d-%Y %I:%M %p')
+            message = dict([
+                ('messageType', "Error"),
+                ('messageDateTime', messageTimeFormatted),
+                ('messageIP', ""),
+                ('messageText', "Exception occurred when executing CopyPiHoleNetwork")
+            ])
+            listMessages.append(message)
 
     if (DHCP_ACTIVE):
         # DHCP Leases method
-	    print('    DHCP Leases Method...')
-	    ReadDHCPLeases()
+        print('    DHCP Leases Method...')
+        try:
+            ReadDHCPLeases()
+        except:
+            messageTime = datetime.datetime.now()
+            messageTimeFormatted = messageTime.strftime('%m-%d-%Y %I:%M %p')
+            message = dict([
+                ('messageType', "Error"),
+                ('messageDateTime', messageTimeFormatted),
+                ('messageIP', ""),
+                ('messageText', "Exception occurred when executing ReadDHCPLeases")
+            ])
+            listMessages.append(message)
 
-    # Load current scan data
-    print('\nProcessing scan results...')
-    PrintLog('Save scanned devices')
-    SaveScannedDevices(scanDevices, cycleInterval)
+    if (scanDevices):
+        # Load current scan data
+        print('\nProcessing scan results...')
+        PrintLog('Save scanned devices')
+        SaveScannedDevices(scanDevices, cycleInterval)
 
-    # Print stats
-    PrintLog('Print Stats')
-    PrintScanStats()
-    PrintLog('Stats end')
+        # Print stats
+        PrintLog('Print Stats')
+        PrintScanStats()
+        PrintLog('Stats end')
 
-    # Create Events
-    print('\nUpdating DB Info...')
-    print('    Sessions Events (connect / discconnect) ...')
-    InsertEvents()
+        # Create Events
+        print('\nUpdating DB Info...')
+        print('    Sessions Events (connect / discconnect) ...')
+        InsertEvents()
 
-    # Create New Devices
-    # after create events -> avoid 'connection' event
-    print('    Creating new devices...')
-    CreateNewDevices()
+        # Create New Devices
+        # after create events -> avoid 'connection' event
+        print('    Creating new devices...')
+        CreateNewDevices()
 
-    # Update devices info
-    print('    Updating Devices Info...')
-    UpdateDevicesDataFromScan()
+        # Update devices info
+        print('    Updating Devices Info...')
+        UpdateDevicesDataFromScan()
 
-    # Resolve devices names
-    PrintLog('   Resolve devices names...')
-    UpdateDevicesNames()
+        # Resolve devices names
+        PrintLog('   Resolve devices names...')
+        UpdateDevicesNames()
 
-    # Void false connection - disconnections
-    print('    Voiding false (ghost) disconnections...')
-    VoidGhostDisconnections()
+        # Void false connection - disconnections
+        print('    Voiding false (ghost) disconnections...')
+        VoidGhostDisconnections()
 
-    # Pair session events (Connection / Disconnection)
-    print('    Pairing session events (connection / disconnection) ...')
-    PairSessionsEvents()
+        # Pair session events (Connection / Disconnection)
+        print('    Pairing session events (connection / disconnection) ...')
+        PairSessionsEvents()
 
-    # Sessions snapshot
-    print('    Creating sessions snapshot...')
-    CreateSessionsSnapshot()
+        # Sessions snapshot
+        print('    Creating sessions snapshot...')
+        CreateSessionsSnapshot()
 
-    # Skip repeated notifications
-    print('    Skipping repeated notifications...')
-    SkipRepeatedNotifications()
+        # Skip repeated notifications
+        print('    Skipping repeated notifications...')
+        SkipRepeatedNotifications()
 
     # Save last scan time
     print('    Saving last scan time...')
@@ -583,7 +624,7 @@ def ScanNetwork():
 def QueryScanCycleData(pOpenCloseDB = False):
     # Check if is necesary open DB
     if (pOpenCloseDB):
-        OpenDB()
+            OpenDB()
 
     # Query Data
     sql.execute("""SELECT cic_arpscanCycles, cic_EveryXmin
@@ -655,77 +696,209 @@ def ExecuteARPScan(pRetries):
     #print(uniqueDevices)
     return uniqueDevices
 
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+unifi_username = UNIFI_USERNAME
+unifi_password = UNIFI_PASSWORD
+unifi_url = 'https://' + UNIFI_HOST
+unifi_site = 'default'
+unifi_post = 'POST'
+unifi_get = 'GET'
+unifi_action = None
+unifi_address = None
+unifi_csrf_token = None
+unifi_cookie_token = None
+unifi_debug = False
+unifi_tracked_headers = ['X-CSRF-TOKEN', 'CONTENT-TYPE', 'CONTENT-LENGTH', 'SET-COOKIE']
+unifi_session = Session()
+
+#-------------------------------------------------------------------------------
+def unifi_callURL(verb, path, payload, parse_response=True, return_error=True):
+    global unifi_csrf_token, unifi_debug, unifi_url, unifi_session
+
+    url = unifi_url + path
+    response = None
+    try:
+        packages.urllib3.disable_warnings(InsecureRequestWarning)
+        if verb == unifi_post:
+            req = Request(verb, url, json=payload)
+            if not unifi_csrf_token is None:
+                unifi_session.headers.update({'X-CSRF-Token': unifi_csrf_token})
+            response = unifi_session.send(unifi_session.prepare_request(req), verify=False)
+            headers = {'Content-Type': 'application/json'}
+            #req_cookies = unifi_session.request.cookies
+            resp_cookies = response.cookies
+            resp_headers = response.headers
+            req_headers = response.request.headers
+            #if unifi_debug:
+            #    print("COOKIES --> %s" % req_cookies)
+            for r in req_headers:
+                if r.upper() in unifi_tracked_headers and unifi_debug:
+                    print("REQ HEADER  %s=%s" % (r, req_headers[r]))
+            if unifi_debug:
+                print("COOKIES <-- %s" % resp_cookies)
+            for h in resp_headers:
+                if h.upper() in unifi_tracked_headers:
+                    if unifi_debug:
+                        print("RESP HEADER --> %s: %s" % (h, resp_headers[h]))
+                    if h.upper() == 'X-CSRF-TOKEN':
+                        unifi_csrf_token = resp_headers[h]
+                        if unifi_debug:
+                            print("Token %s=%s saved." % (h, unifi_csrf_token))
+                    elif h.upper() == 'SET-COOKIE':
+                        cookie_token = resp_headers[h]
+                        if unifi_debug:
+                            print("Cookie %s=%s saved." % (h, unifi_cookie_token))
+            if unifi_debug:
+                print("COOKIE / CSRF TOKEN: %s/%s" % (cookie_token, csrf_token))
+                print("Response status & reason: " + str(response.status_code) + " " + str(response.reason))
+        if response.status_code != 200 and response.status_code != 204 and response.status_code !=201 and return_error:
+            raise Exception("Error when requesting remote url %s [%s]:%s" % (path,  response.status_code, response.text))
+
+        if parse_response:
+            return response.text
+        return None
+    except:
+        print("Unexpected error: ",sys.exc_info()[0])
+
+#-------------------------------------------------------------------------------
+def unifi_login():
+    global unifi_username, unifi_password, unifi_debug
+
+    payload = {'password': unifi_password, 'username': unifi_username}
+    #payload['strict'] = 'True'
+    response = unifi_callURL('POST', '/api/auth/login', payload)
+    if unifi_debug:
+        print(response.content)
+        print("-----------------------------------------")
+        print("JSON", response.json())
+
+#-------------------------------------------------------------------------------
+def unifi_logout():
+    global unifi_session
+
+    response = unifi_callURL('POST', '/logout', '')
+    unifi_session.cookies.clear()
+
+#-------------------------------------------------------------------------------
+def unifi_listConnectedClients():
+    global unifi_action, unifi_site
+
+    response = unifi_callURL('POST', '/proxy/network/api/s/%s/stat/sta' % unifi_site, '')
+    output = json.loads(response)
+    return output['data']
+
+#-------------------------------------------------------------------------------
+def unifi_listConfiguredClients():
+    global unifi_action, unifi_site
+
+    response = unifi_callURL('POST', '/proxy/network/api/s/%s/rest/user' % unifi_site, '')
+    output = json.loads(response)
+    return output['data']
+
+#-------------------------------------------------------------------------------
+def unifi_listAllClients():
+    global unifi_action, unifi_site
+
+    response = unifi_callURL('POST', '/proxy/network/api/s/%s/stat/alluser' % unifi_site, '')
+    output = json.loads(response)
+    return output['data']
+
+#-------------------------------------------------------------------------------
+def unifi_getClientDetail(mac):
+    global unifi_action, unifi_site
+
+    response = unifi_callURL('POST', '/proxy/network/api/s/%s/stat/user/%s' % (unifi_site, mac), '')
+    output = json.loads(response)
+    return output['data']
+
+#-------------------------------------------------------------------------------
+def unifi_listDevices():
+    global unifi_action, unifi_site
+
+    response = unifi_callURL('POST', '/proxy/network/api/s/%s/stat/device' % unifi_site, '')
+    output = json.loads(response)
+    return output['data']
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+
+
+
+
 
 #-------------------------------------------------------------------------------
 def QueryUniFiAPI(pCycleInterval):
     # Connect to the UniFI REST API and login
-    unifi = UnifiClient(host=UNIFI_HOST, port=UNIFI_PORT, username=UNIFI_USERNAME, password=UNIFI_PASSWORD, server_type=UNIFI_SERVER_TYPE)
-    unifi.login()
+    unifi_login()
 
-    configuredClients = unifi.list_configured_clients()
-    configuredClientsStr = json.dumps(configuredClients)
-    configuredClientsJSON = json.loads(configuredClientsStr)
-    #configuredClientsJSONFormattedStr = json.dumps(configuredClientsJSON, indent=2)
-    #print(configuredClientsJSONFormattedStr)
+    connectedClients = unifi_listConnectedClients()
+    #configuredClients = unifi_listConfiguredClients()
+    allClients = unifi_listAllClients()
+    devices = unifi_listDevices()
 
-    devices = unifi.list_devices()
-    devicesStr = json.dumps(devices)
-    devicesJSON = json.loads(devicesStr)
-    #devicesJSONFormattedStr = json.dumps(devicesJSON, indent=2)
-    #print(devicesJSONFormattedStr)
-
-    #unifi.logout()
+    clients = allClients
 
     # Create Userdict of clients
     scanList = []
-    for configuredClient in configuredClientsJSON:
-        if ('blocked' in configuredClient and configuredClient['blocked']):
+    for client in clients:
+        if ('blocked' in client and client['blocked']):
             continue
-        if (UNIFI_SKIP_GUESTS and 'is_guest' in configuredClient and configuredClient['is_guest']):
+        if (UNIFI_SKIP_GUESTS and 'is_guest' in client and client['is_guest']):
             continue
-        else: #(client['last_seen'] >= timestamp):
-            clientDetail = unifi.get_client_details(configuredClient['mac'])
-            if (len(clientDetail) < 1):
-                continue
-            client = clientDetail[0]
-            if ('ip' in client):
-                if (UNIFI_SKIP_NAMED_GUESTS and 'name' in client and re.search('guest', client['name'], re.IGNORECASE)):
-                    continue
-                else:
-                    ip = client['ip']
-                    mac = client['mac'].upper()
-                    staticIP = False
+        if (UNIFI_SKIP_NAMED_GUESTS and 'name' in client and re.match('guest', client['name'], re.IGNORECASE)):
+            continue
+        if (len(client['mac']) < 1):
+            continue # no mac
 
-                    if ('use_fixedip' in client and client['use_fixedip']):
-                        ip = client['fixed_ip']
-                        staticIP = True
+        mac = client['mac'].upper()
+        randomMAC = False
+        comments = ''
+        if (mac[1] == '2' or mac[1] == '6' or mac[1] == 'A' or mac[1] == 'E'):
+            randomMAC = True
+            comments = 'This device has a random MAC address from iOS or Android'
 
-                    try:
-                        address = ipaddress.IPv4Address(ip)
-                    except ValueError:
-                        continue # not a valid IP address
-                    if (UNIFI_REQUIRE_PRIVATE_IP and not address.is_private):
-                        continue # is a private address
+        staticIP = False
+        if ('use_fixedip' in client and client['use_fixedip']):
+            ip = client['fixed_ip']
+            staticIP = True
 
-                    randomMAC = False
-                    comments = ''
-                    if (mac[1] == '2' or mac[1] == '6' or mac[1] == 'A' or mac[1] == 'E'):
-                        randomMAC = True
-                        comments = 'This device has a random MAC address from iOS or Android'
+        clientDetail = unifi_getClientDetail(mac)
+        if (len(clientDetail) < 1):
+            continue # no client detail
+        client = clientDetail[0]
+        if ('ip' in client and client['ip']):
+            ip = client['ip']
+        else:
+            continue # no IP address
 
-                    scan = dict([
-                        ('ip', ip),
-                        ('mac', mac),
-                        ('hw', client['oui']),
-                        ('staticIP', staticIP),
-                        ('deviceType', ''),
-                        ('randomMAC', randomMAC),
-                        ('comments', comments)
-                    ])
-                    scanList.append(scan)
+        try:
+            address = ipaddress.IPv4Address(ip)
+        except ValueError:
+            continue # not a valid IP address
+        if (UNIFI_REQUIRE_PRIVATE_IP and not address.is_private):
+            continue # is a private address
+
+        scan = dict([
+            ('ip', ip),
+            ('mac', mac),
+            ('hw', client['oui']),
+            ('staticIP', staticIP),
+            ('deviceType', ''),
+            ('randomMAC', randomMAC),
+            ('comments', comments)
+        ])
+        scanList.append(scan)
 
     # Create Userdict of devices
-    for device in devicesJSON:
+    for device in devices:
         ip = device['ip']
 
         deviceType = ''
@@ -757,6 +930,8 @@ def QueryUniFiAPI(pCycleInterval):
                 ('comments', '')
             ])
             scanList.append(scan)
+
+    unifi_logout()
 
     # return list
     #print(scanList)
@@ -1527,18 +1702,18 @@ def SaveLastScanTime():
     
     scanDuration = endTime - startTimeActual
 
-    startTimeFormated = startTimeActual.strftime('%m-%d-%Y %I:%M %p')
-    scanDurationFormated = strfdelta(scanDuration, '{M:02}m {S:02.0f}s')
+    startTimeFormatted = startTimeActual.strftime('%m-%d-%Y %I:%M %p')
+    scanDurationFormatted = strfdelta(scanDuration, '{M:02}m {S:02.0f}s')
 
     sql.execute("DELETE FROM Parameters WHERE par_ID = 'FrontBack_Scan_Time'")
     sql.execute("""INSERT INTO Parameters (par_ID, par_Value)
                     VALUES ('FrontBack_Scan_Time', ?) """,
-                    (startTimeFormated, ) ) 
+                    (startTimeFormatted, ) ) 
 
     sql.execute("DELETE FROM Parameters WHERE par_ID = 'FrontBack_Scan_Duration'")
     sql.execute("""INSERT INTO Parameters (par_ID, par_Value)
                     VALUES ('FrontBack_Scan_Duration', ?) """,
-                    (scanDurationFormated, ) ) 
+                    (scanDurationFormatted, ) ) 
 
     PrintLog('Save Last Scan Time end')
 
@@ -1572,10 +1747,12 @@ def EmailReporting():
     mailHTML = templateFile.read() 
     templateFile.close() 
 
+    print('    Formatting report...')
+
     # Report Header & footer
-    timeFormated = startTime.strftime('%Y-%m-%d %H:%M')
-    mailText = mailText.replace('<REPORT_DATE>', timeFormated)
-    mailHTML = mailHTML.replace('<REPORT_DATE>', timeFormated)
+    timeFormatted = startTime.strftime('%Y-%m-%d %H:%M')
+    mailText = mailText.replace('<REPORT_DATE>', timeFormatted)
+    mailHTML = mailHTML.replace('<REPORT_DATE>', timeFormatted)
 
     mailText = mailText.replace('<SCAN_CYCLE>', cycle )
     mailHTML = mailHTML.replace('<SCAN_CYCLE>', cycle )
@@ -1592,15 +1769,46 @@ def EmailReporting():
     mailText = mailText.replace('<PIALERT_YEAR>', VERSION_YEAR )
     mailHTML = mailHTML.replace('<PIALERT_YEAR>', VERSION_YEAR )
 
+    # Compose Messages Section
+    mailSectionMessages = False
+    mailTextMessages = ''
+    mailHTMLMessages = ''
+    textLineTemplate = '    {} \t{}\t{}\t{}\n'
+    htmlStyleInfo = 'style="color:#409040"'
+    htmlStyleWarning = 'style="font-size: 14px; color:#FFD700"'
+    htmlStyleError = 'style="font-size: 14px; color:#D02020"'
+    htmlLineTemplate = '<tr>\n'+ \
+        '  <td> <a {} href="{}"> {} </a> </td>\n  <td> {} </td>\n'+ \
+        '  <td> {} </td>\n'+ \
+        '  <td> {} </td>\n</tr>\n'
+
+    for message in listMessages:
+        mailSectionMessages = True
+        mailTextMessages += textLineTemplate.format(
+            message['messageType'], message['messageDateTime'],
+            message['messageIP'], message['messageText'])
+        htmlStyle = htmlStyleInfo
+        if (message['messageType'] == 'Error'):
+            htmlStyle = htmlStyleError
+        elif (message['messageType'] == 'Warning'):
+            htmlStyle = htmlStyleWarning
+
+        mailHTMLMessages += htmlLineTemplate.format(
+            htmlStyle,
+            REPORT_URL,
+            message['messageType'], message['messageDateTime'],
+            message['messageIP'], message['messageText'])
+
+    FormatReportSection(mailSectionMessages, 'SECTION_MESSAGES', 'TABLE_MESSAGES', mailTextMessages, mailHTMLMessages)
+
     # Compose Internet Section
-    print('    Formating report...')
     mailSectionInternet = False
     mailTextInternet = ''
     mailHTMLInternet = ''
     textLineTemplate = '    {} \t{}\t{}\t{}\n'
     htmlLineTemplate = '<tr>\n'+ \
         '  <td> <a href="{}{}"> {} </a> </td>\n  <td> {} </td>\n'+ \
-        '  <td style="font-size: 24px; color:#D02020"> {} </td>\n'+ \
+        '  <td style="font-size: 14px; color:#D02020"> {} </td>\n'+ \
         '  <td> {} </td>\n</tr>\n'
 
     sql.execute("""SELECT * FROM Events
@@ -1717,7 +1925,8 @@ def EmailReporting():
         WriteFile(LOG_PATH + '/report_output.html', mailHTML) 
 
     # Send Mail
-    if (mailSectionInternet == True or mailSectionNewDevices == True \
+    if (mailSectionMessages == True  \
+    or mailSectionInternet == True or mailSectionNewDevices == True \
     or mailSectionDevicesDown == True or mailSectionEvents == True):
         if (REPORT_MAIL):
             print('    Sending report by email...')
