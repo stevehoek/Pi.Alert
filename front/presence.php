@@ -156,7 +156,13 @@
 <!-- fullCalendar Scheduler -->
   <link href="lib/fullcalendar-scheduler/scheduler.min.css" rel="stylesheet">
   <script src="lib/fullcalendar-scheduler/scheduler.min.js"></script>  
-
+  <!-- Dark-Mode Patch -->
+  <?php
+  if ($ENABLED_DARKMODE === True) {
+     echo '<link rel="stylesheet" href="css/dark-patch-cal.css">';
+  }
+  ?>
+  
 <!-- page script ----------------------------------------------------------- -->
 <script>
 

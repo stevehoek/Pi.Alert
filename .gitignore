@@ -22,3 +22,4 @@ back/send-message.py
 back/test.py
 log/report_output.debug.html
 log/report_output.debug.txt
+.DS_Store

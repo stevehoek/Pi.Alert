@@ -7,6 +7,12 @@
 #  GNU GPLv3
 #--------------------------------------------------------------------------- -->
 
+<?php
+if (file_exists("darkmode")) {
+    $ENABLED_DARKMODE = True;
+}
+?>
+
 <!DOCTYPE html> 
 <html>
 
@@ -34,10 +40,20 @@
   <!-- AdminLTE Skins. We have chosen the skin-blue for this starter
         page. However, you can choose any other skin. Make sure you
         apply the skin class to the body tag so the changes take effect. -->
-  <link rel="stylesheet" href="lib/AdminLTE/dist/css/skins/skin-blue-light.min.css">
+  <link rel="stylesheet" href="lib/AdminLTE/dist/css/skins/skin-blue.min.css">
 
   <!-- Pi.Alert CSS -->
   <link rel="stylesheet" href="css/pialert.css">
+
+  <!-- Dark-Mode Patch -->
+  <?php
+  if ($ENABLED_DARKMODE === True) {
+     echo '<link rel="stylesheet" href="css/dark-patch.css">';
+     $BACKGROUND_IMAGE='style="background-image: url(\'img/boxed-bg-dark.png\');"';
+  } else {
+     $BACKGROUND_IMAGE='style="background-image: url(\'img/background.png\');"';
+  }
+  ?>
 
   <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
   <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
@@ -55,7 +71,7 @@
 
 <!-- ----------------------------------------------------------------------- -->
 <!-- Layout Boxed Blue -->
-<body class="hold-transition skin-blue-light layout-boxed sidebar-mini" style="background-image: url('img/background.png');">
+<body class="hold-transition skin-blue layout-boxed sidebar-mini" <?php echo $BACKGROUND_IMAGE;?>>
 <!-- Site wrapper -->
 <div class="wrapper">
 
@@ -66,7 +82,7 @@
     <!-- Logo -->
     <a href="." class="logo">
       <!-- mini logo for sidebar mini 50x50 pixels -->
-      <span class="logo-mini">P<b>a</b></span>
+      <span class="logo-mini">U<b>a</b></span>
       <!-- logo for regular state and mobile devices -->
       <span class="logo-lg">UniFi<b>.Alert</b></span>
     </a>
@@ -93,7 +109,7 @@
           <li><a style="pointer-events:none;" class="hidden-xs"><?php echo gethostname(); ?></a></li>
 
           <!-- Refresh -->
-          <li><a href="javascript:refreshDevices(15);"><i class="fa fa-retweet"></i><span> Scan</span></a></li>
+          <li><a href="javascript:forceScan(15);"><i class="fa fa-retweet"></i><span> Scan</span></a></li>
 
           <!-- Refresh -->
           <li><a href="javascript:showLatestReport(15);"><i class="fa fa-inbox"></i><span></span></a></li>
@@ -168,7 +184,13 @@
 -->
 
 <li class=" <?php if (in_array (basename($_SERVER['SCRIPT_NAME']), array('devices.php', 'deviceDetails.php') ) ){ echo 'active'; } ?>">
-          <a href="devices.php"><i class="fa fa-laptop"></i> <span>Devices</span></a>
+          <a href="devices.php"><i class="fa fa-laptop"></i> <span>Devices</span>
+            <small class="label pull-right bg-blue" id="header_dev_count_all"></small>
+            <small class="label pull-right bg-green" id="header_dev_count_on"></small>
+            <small class="label pull-right bg-gray-active" id="header_dev_count_off"></small>
+            <small class="label pull-right bg-red" id="header_dev_count_down"></small>
+            <small class="label pull-right bg-yellow" id="header_dev_count_new"></small>
+          </a>
         </li>
         
 <!--

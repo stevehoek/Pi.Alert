@@ -492,6 +492,8 @@ def ScanNetwork():
     cycleInterval  = scanCycleData['cic_EveryXmin']
     scanDevices = []
 
+    OpenDB()
+
     print('\nScanning...')
 
     if (ARPSCAN_ACTIVE):
@@ -528,8 +530,6 @@ def ScanNetwork():
     else:
         print('    ERROR: No primary scan method specified in the config!')
         return 1
-
-    OpenDB()
 
     if (PIHOLE_ACTIVE):
         # Pi-hole method
@@ -624,7 +624,7 @@ def ScanNetwork():
 def QueryScanCycleData(pOpenCloseDB = False):
     # Check if is necesary open DB
     if (pOpenCloseDB):
-            OpenDB()
+        OpenDB()
 
     # Query Data
     sql.execute("""SELECT cic_arpscanCycles, cic_EveryXmin
@@ -839,23 +839,25 @@ def QueryUniFiAPI(pCycleInterval):
     # Connect to the UniFI REST API and login
     unifi_login()
 
-    connectedClients = unifi_listConnectedClients()
+    #connectedClients = unifi_listConnectedClients()
     #configuredClients = unifi_listConfiguredClients()
     allClients = unifi_listAllClients()
     devices = unifi_listDevices()
 
-    clients = allClients
-
     # Create Userdict of clients
-    scanList = []
-    for client in clients:
+    onlineList = []
+    offlineList = []
+    for client in allClients:
+        mac = ''
+        ip = ''
+
         if ('blocked' in client and client['blocked']):
             continue
         if (UNIFI_SKIP_GUESTS and 'is_guest' in client and client['is_guest']):
             continue
         if (UNIFI_SKIP_NAMED_GUESTS and 'name' in client and re.match('guest', client['name'], re.IGNORECASE)):
             continue
-        if (len(client['mac']) < 1):
+        if ('mac' not in client or len(client['mac']) < 1):
             continue # no mac
 
         mac = client['mac'].upper()
@@ -870,14 +872,29 @@ def QueryUniFiAPI(pCycleInterval):
             ip = client['fixed_ip']
             staticIP = True
 
-        clientDetail = unifi_getClientDetail(mac)
-        if (len(clientDetail) < 1):
-            continue # no client detail
-        client = clientDetail[0]
-        if ('ip' in client and client['ip']):
-            ip = client['ip']
-        else:
-            continue # no IP address
+        clientDetails = unifi_getClientDetail(mac)
+        if (len(clientDetails) < 1):
+            continue # no client details
+        clientDetail = clientDetails[0]
+        if ('ip' in clientDetail and clientDetail['ip']):
+            ip = clientDetail['ip']
+        elif ('uptime' in clientDetail):
+            #some devices have no ip but are still connected; IP may be static
+            if (len(ip) < 1):
+                ip = "0.0.0.0"
+        else:    
+            scan = dict([
+                ('ip', ip),
+                ('mac', mac),
+                ('hw', client['oui']),
+                ('staticIP', staticIP),
+                ('deviceType', ''),
+                ('deviceName', clientDetail['name']),
+                ('randomMAC', randomMAC),
+                ('comments', comments)
+            ])
+            offlineList.append(scan)
+            continue # no IP address, not online
 
         try:
             address = ipaddress.IPv4Address(ip)
@@ -895,7 +912,7 @@ def QueryUniFiAPI(pCycleInterval):
             ('randomMAC', randomMAC),
             ('comments', comments)
         ])
-        scanList.append(scan)
+        onlineList.append(scan)
 
     # Create Userdict of devices
     for device in devices:
@@ -929,13 +946,19 @@ def QueryUniFiAPI(pCycleInterval):
                 ('randomMAC', False),
                 ('comments', '')
             ])
-            scanList.append(scan)
+            onlineList.append(scan)
 
     unifi_logout()
 
+    if (UNIFI_DELETE_OFFLINE_UNNAMED):
+        for client in offlineList:
+            sql.execute("DELETE FROM Device WHERE dev_MAC = ?",
+                        (client['mac'],))
+
     # return list
-    #print(scanList)
-    return scanList
+    #print(onlineList)
+    #print(offlineList)
+    return onlineList
 
 
 #-------------------------------------------------------------------------------
@@ -1740,8 +1763,8 @@ def EmailReporting():
     templateFile.close() 
 
     # Open html Template
-    if (not __debug__):
-        templateFile = open(PIALERT_BACK_PATH + '/report_template.debug.html', 'r') 
+    if (REPORT_DARK):
+        templateFile = open(PIALERT_BACK_PATH + '/report_template_dark.html', 'r') 
     else:
         templateFile = open(PIALERT_BACK_PATH + '/report_template.html', 'r') 
     mailHTML = templateFile.read() 

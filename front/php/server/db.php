@@ -41,6 +41,10 @@ function SQLite3_connect ($trytoreconnect, $readonly) {
       sleep(3);
       return SQLite3_connect(false, $readonly);
     }
+    else
+    {
+      return new SQLite3($DBFILE, SQLITE3_OPEN_READONLY);
+    }
   }
 }
 

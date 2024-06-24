@@ -24,7 +24,7 @@
 
       <!-- period selector -->
       <span class="breadcrumb" style="top: 0px;">
-        <select class="form-control" id="period" onchange="javascript: periodChanged();">
+        <select class="form-control" id="period" onchange="javascript:periodChanged();">
           <option value="1 day">Today</option>
           <option value="7 days">Last Week</option>
           <option value="1 month" selected>Last Month</option>
@@ -56,7 +56,7 @@
             <div class="small-box bg-green pa-small-box-green pa-small-box-2">
               <div class="inner"> <h3 id="deviceSessions"> -- </h3> </div>
               <div class="icon"> <i class="fa fa-plug"></i> </div>
-              <div class="small-box-footer pa-small-box-footer"> Sesions <i class="fa fa-arrow-circle-right"></i> </div>
+              <div class="small-box-footer pa-small-box-footer"> Sessions <i class="fa fa-arrow-circle-right"></i> </div>
             </div>
           </a>
         </div>
@@ -505,7 +505,12 @@
   <link rel="stylesheet" href="lib/AdminLTE/bower_components/fullcalendar/dist/fullcalendar.print.min.css" media="print">
   <script src="lib/AdminLTE/bower_components/moment/moment.js"></script>
   <script src="lib/AdminLTE/bower_components/fullcalendar/dist/fullcalendar.min.js"></script>
-
+  <!-- Dark-Mode Patch -->
+  <?php
+  if ($ENABLED_DARKMODE === True) {
+     echo '<link rel="stylesheet" href="css/dark-patch-cal.css">';
+  }
+  ?>
 
 <!-- page script ----------------------------------------------------------- -->
 <script>
@@ -1051,7 +1056,7 @@ function getDeviceData (readAllData=false) {
       }
   
       // Status
-      $('#deviceStatus').html (deviceData['dev_Status']);
+      $('#deviceStatus').html (deviceData['dev_Status'].replace('-', ''));
       switch (deviceData['dev_Status']) {
         case 'On-line':   icon='fa fa-check';    color='text-green';   break;
         case 'Off-line':  icon='fa fa-close';    color='text-gray';    break;
@@ -1095,7 +1100,7 @@ function getDeviceData (readAllData=false) {
         $('#txtFirstConnection').val                 (deviceData['dev_FirstConnection']);
         $('#txtLastConnection').val                  (deviceData['dev_LastConnection']);
         $('#txtLastIP').val                          (deviceData['dev_LastIP']);
-        $('#txtStatus').val                          (deviceData['dev_Status']);
+        $('#txtStatus').val                          (deviceData['dev_Status'].replace('-', ''));
         if (deviceData['dev_StaticIP'] == 1)         {$('#chkStaticIP').iCheck('check');}     else {$('#chkStaticIP').iCheck('uncheck');}
     
         $('#txtScanCycle').val                       (deviceData['dev_ScanCycle'] +' min');

@@ -35,7 +35,7 @@
 //  Refresh Devices
 //------------------------------------------------------------------------------
 function refreshDevices ($cycle) {
-  $data = shell_exec("sudo -u pi python ../../../back/pialert.py ".$cycle);
+  $data = shell_exec("sudo -u pi /usr/bin/python3 ../../../back/pialert.py ".$cycle);
   echo $data;
 }
 

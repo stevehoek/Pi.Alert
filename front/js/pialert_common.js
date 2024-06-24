@@ -207,7 +207,7 @@ function newTimerRefreshData(refeshFunction)
 {
   timerRefreshData = setTimeout (function() {
     refeshFunction();
-  }, 15000); //15s
+  }, 45000); //45s
 }
 
 
@@ -225,7 +225,7 @@ function newTimerRefreshDevices(refeshFunction)
 {
   timerRefreshDevices = setTimeout (function() {
     refeshFunction();
-  }, 75000); //1m15s
+  }, 120000); //2m
 }
 
 
@@ -237,11 +237,11 @@ function debugTimer()
 
 
 // -----------------------------------------------------------------------------
-function refreshDevices(cycle) 
+function forceScan(cycle) 
 {
   // show temporal notification
   time = (cycle * 2);
-  msg = "Refreshing.  Please wait up to " + time + " seconds...";
+  msg = "Refreshing.  Please wait at least " + time + " seconds...";
   $("#alert-message").html(msg);
   $("#notification").fadeIn(1, function() {
 

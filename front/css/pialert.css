@@ -96,19 +96,19 @@
    Customized Main Menu
 ----------------------------------------------------------------------------- */
 .main-header .logo {
-  width: 150px;
+  width: 250px;
 }
 
 .main-header > .navbar {
-  margin-left: 150px;
+  margin-left: 250px;
 }
 
 .main-sidebar, .left-side {
-  width: 150px;
+  width: 250px;
 }
 
 .content-wrapper, .right-side, .main-footer {
-  margin-left: 150px;
+  margin-left: 250px;
 }
 
 @media (max-width: 767px) {
@@ -127,10 +127,10 @@
 }
 
 .sidebar-open .content-wrapper, .sidebar-open .main-footer {
-    -webkit-transform: translate(150px, 0);
-    -ms-transform: translate(150px, 0);
-    -o-transform: translate(150px, 0);
-    transform: translate(150px, 0)
+    -webkit-transform: translate(225px, 0);
+    -ms-transform: translate(225px, 0);
+    -o-transform: translate(225px, 0);
+    transform: translate(225px, 0)
 }
 
 

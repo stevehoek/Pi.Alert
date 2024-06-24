@@ -61,5 +61,33 @@
 <!-- Pi.Alert -------------------------------------------------------------- -->
   <script src="js/pialert_common.js"></script>
 
+  <script>
+    function getDevicesTotalsBadge() {
+      // get totals and put in boxes
+      $.get('php/server/devices.php?action=getDevicesTotals', function(data) {
+        var totalsDevicesbadge = JSON.parse(data);
+        var unsetbadge = "";
+        var offline = totalsDevicesbadge[0]-totalsDevicesbadge[1]-totalsDevicesbadge[3]-totalsDevicesbadge[4];
+        
+        if (totalsDevicesbadge[0] > 0) {$('#header_dev_count_all').html(totalsDevicesbadge[0].toLocaleString());} else {$('#header_dev_count_all').html(unsetbadge.toLocaleString());}
+        if (totalsDevicesbadge[1] > 0) {$('#header_dev_count_on').html(totalsDevicesbadge[1].toLocaleString());} else {$('#header_dev_count_on').html(unsetbadge.toLocaleString());}
+        if (totalsDevicesbadge[1] > 0) {$('#header_dev_count_off').html(offline.toLocaleString());} else {$('#header_dev_count_off').html(unsetbadge.toLocaleString());}
+        if (totalsDevicesbadge[3] > 0) {$('#header_dev_count_new').html(totalsDevicesbadge[3].toLocaleString());} else {$('#header_dev_count_new').html(unsetbadge.toLocaleString());}
+        if (totalsDevicesbadge[4] > 0) {$('#header_dev_count_down').html(totalsDevicesbadge[4].toLocaleString());} else {$('#header_dev_count_down').html(unsetbadge.toLocaleString());}
+      } );
+    }
+
+    function updateTotals() {
+      getDevicesTotalsBadge();
+    }
+
+    // Init functions
+    updateTotals();
+
+    // Start function timers
+    setInterval(updateTotals, 60000);
+  </script>
+
+
 </body>
 </html>
